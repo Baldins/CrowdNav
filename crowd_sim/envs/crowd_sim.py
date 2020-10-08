@@ -9,7 +9,6 @@ from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 
-
 class CrowdSim(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -57,17 +56,18 @@ class CrowdSim(gym.Env):
         self.collision_penalty = config.getfloat('reward', 'collision_penalty')
         self.discomfort_dist = config.getfloat('reward', 'discomfort_dist')
         self.discomfort_penalty_factor = config.getfloat('reward', 'discomfort_penalty_factor')
-        if self.config.get('humans', 'policy') == 'orca':
-            self.case_capacity = {'train': np.iinfo(np.uint32).max - 2000, 'val': 1000, 'test': 1000}
-            self.case_size = {'train': np.iinfo(np.uint32).max - 2000, 'val': config.getint('env', 'val_size'),
-                              'test': config.getint('env', 'test_size')}
-            self.train_val_sim = config.get('sim', 'train_val_sim')
-            self.test_sim = config.get('sim', 'test_sim')
-            self.square_width = config.getfloat('sim', 'square_width')
-            self.circle_radius = config.getfloat('sim', 'circle_radius')
-            self.human_num = config.getint('sim', 'human_num')
-        else:
-            raise NotImplementedError
+        # if self.config.get('humans', 'policy') == 'orca':
+
+        self.case_capacity = {'train': np.iinfo(np.uint32).max - 2000, 'val': 1000, 'test': 1000}
+        self.case_size = {'train': np.iinfo(np.uint32).max - 2000, 'val': config.getint('env', 'val_size'),
+                          'test': config.getint('env', 'test_size')}
+        self.train_val_sim = config.get('sim', 'train_val_sim')
+        self.test_sim = config.get('sim', 'test_sim')
+        self.square_width = config.getfloat('sim', 'square_width')
+        self.circle_radius = config.getfloat('sim', 'circle_radius')
+        self.human_num = config.getint('sim', 'human_num')
+        # else:
+        #     raise NotImplementedError
         self.case_counter = {'train': 0, 'test': 0, 'val': 0}
 
         logging.info('human number: {}'.format(self.human_num))
@@ -163,6 +163,8 @@ class CrowdSim(gym.Env):
             py_noise = (np.random.random() - 0.5) * human.v_pref
             px = self.circle_radius * np.cos(angle) + px_noise
             py = self.circle_radius * np.sin(angle) + py_noise
+            # px = np.random.random()
+            # py = np.random.random()
             collide = False
             for agent in [self.robot] + self.humans:
                 min_dist = human.radius + agent.radius + self.discomfort_dist
@@ -172,7 +174,7 @@ class CrowdSim(gym.Env):
                     break
             if not collide:
                 break
-        human.set(px, py, -px, -py, 0, 0, 0)
+        human.set(px, py, -px+1, -py+1, 0, 0, 0)
         return human
 
     def generate_square_crossing_human(self):
@@ -224,6 +226,7 @@ class CrowdSim(gym.Env):
         for human in self.humans:
             sim.addAgent(human.get_position(), *params, human.radius, human.v_pref, human.get_velocity())
 
+
         max_time = 1000
         while not all(self.human_times):
             for i, agent in enumerate([self.robot] + self.humans):
@@ -238,6 +241,9 @@ class CrowdSim(gym.Env):
             for i, human in enumerate(self.humans):
                 if self.human_times[i] == 0 and human.reached_destination():
                     self.human_times[i] = self.global_time
+                if human.reached_destination():
+                    # human.set_goal_position([ np.random.random(), (np.random.random()) ])
+                    human.set(human.px, human.py, np.random.random(), np.random.random(), 0, 0, 0)
 
             # for visualization
             self.robot.set_position(sim.getAgentPosition(0))
@@ -327,12 +333,23 @@ class CrowdSim(gym.Env):
                 ob += [self.robot.get_observable_state()]
             human_actions.append(human.act(ob))
 
+            if human.reached_destination():
+                if np.random.random() > 0.5:
+                    sign = -1
+                else:
+                    sign = 1
+                # human.set_goal_position([ np.random.random(), (np.random.random()) ])
+                human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
+
         # collision detection
         dmin = float('inf')
         collision = False
+        ppl_count = 0
+        closest_distance_all = []
         for i, human in enumerate(self.humans):
             px = human.px - self.robot.px
             py = human.py - self.robot.py
+
             if self.robot.kinematics == 'holonomic':
                 vx = human.vx - action.vx
                 vy = human.vy - action.vy
@@ -346,9 +363,13 @@ class CrowdSim(gym.Env):
             if closest_dist < 0:
                 collision = True
                 # logging.debug("Collision: distance between robot and p{} is {:.2E}".format(i, closest_dist))
-                break
+                # break
             elif closest_dist < dmin:
                 dmin = closest_dist
+            elif closest_dist < 3:
+                ppl_count += 1
+
+
 
         # collision detection between humans
         human_num = len(self.humans)
@@ -417,7 +438,7 @@ class CrowdSim(gym.Env):
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
 
-        return ob, reward, done, info
+        return ob, reward, done, info, ppl_count, self.robot.get_position(), self.robot.get_velocity(), dmin
 
     def render(self, mode='human', output_file=None):
         from matplotlib import animation
