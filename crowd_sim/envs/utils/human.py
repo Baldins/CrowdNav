@@ -1,10 +1,13 @@
 from crowd_sim.envs.utils.agent import Agent
 from crowd_sim.envs.utils.state import JointState
-
+import random
+import numpy as np
 
 class Human(Agent):
+    humans = []
     def __init__(self, config, section):
         super().__init__(config, section)
+        Human.humans.append(self)
 
     def act(self, ob):
         """
@@ -15,3 +18,9 @@ class Human(Agent):
         state = JointState(self.get_full_state(), ob)
         action = self.policy.predict(state)
         return action
+
+    @classmethod
+    def get_random_humans(cls):
+        return random.sample(cls.humans, int(len(Human.humans)/2))
+
+

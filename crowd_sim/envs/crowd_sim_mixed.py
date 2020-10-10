@@ -9,7 +9,7 @@ from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 
-class CrowdSim(gym.Env):
+class CrowdSim_mixed(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
@@ -325,12 +325,22 @@ class CrowdSim(gym.Env):
         Compute actions for all agents, detect collision, update environment and return (ob, reward, done, info)
 
         """
+        human_actions_attentive = []
+        human_actions_nonattentive = []
         human_actions = []
+
+        n_random = Human.get_random_humans()
+        print(n_random)
+
         for human in self.humans:
+
             # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
             if self.robot.visible:
                 ob += [self.robot.get_observable_state()]
+
+            # human_actions_attentive.append(ob_r)
+            # human_actions_nonattentive.append(ob_h)
             human_actions.append(human.act(ob))
 
             if human.reached_destination():
