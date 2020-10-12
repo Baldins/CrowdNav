@@ -325,22 +325,26 @@ class CrowdSim_mixed(gym.Env):
         Compute actions for all agents, detect collision, update environment and return (ob, reward, done, info)
 
         """
-        human_actions_attentive = []
-        human_actions_nonattentive = []
+
         human_actions = []
 
-        n_random = Human.get_random_humans()
-        print(n_random)
+        # get randomly selected humans to
+        non_attentive_humans = Human.get_random_humans()
+        print(non_attentive_humans)
+
 
         for human in self.humans:
 
+
             # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
-            if self.robot.visible:
-                ob += [self.robot.get_observable_state()]
 
-            # human_actions_attentive.append(ob_r)
-            # human_actions_nonattentive.append(ob_h)
+            for na_human in non_attentive_humans:
+                na_human.set_non_attentive()
+                print(na_human.get_observable_state())
+                if self.robot.visible and human != na_human:
+                    ob += [self.robot.get_observable_state()]
+
             human_actions.append(human.act(ob))
 
             if human.reached_destination():
@@ -348,7 +352,6 @@ class CrowdSim_mixed(gym.Env):
                     sign = -1
                 else:
                     sign = 1
-                # human.set_goal_position([ np.random.random(), (np.random.random()) ])
                 human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
 
         # collision detection
@@ -634,7 +637,7 @@ class CrowdSim_mixed(gym.Env):
             if output_file is not None:
                 ffmpeg_writer = animation.writers['ffmpeg']
                 writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-                anim.save(output_file, writer=writer)
+                anim.save("/home/fbaldini/Desktop/ssp_w_h_orca_5.mp4", writer=writer)
             else:
                 plt.show()
         else:
