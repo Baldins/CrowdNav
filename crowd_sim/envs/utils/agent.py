@@ -27,7 +27,7 @@ class Agent(object):
         self.vy = None
         self.theta = None
         self.time_step = None
-        self.attentive = True
+        self.attentive = False
 
     def print_info(self):
         logging.info('Agent is {} and has {} kinematic constraint'.format(
@@ -76,6 +76,9 @@ class Agent(object):
 
     def set_non_attentive(self):
         self.attentive = False
+
+    def set_attentive(self):
+        self.attentive = True
 
 
     def get_full_state(self):

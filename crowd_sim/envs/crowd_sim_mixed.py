@@ -3,6 +3,7 @@ import gym
 import matplotlib.lines as mlines
 import numpy as np
 import rvo2
+import random
 from matplotlib import patches
 from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
@@ -330,20 +331,29 @@ class CrowdSim_mixed(gym.Env):
 
         # get randomly selected humans to
         non_attentive_humans = Human.get_random_humans()
-        print(non_attentive_humans)
 
+
+        non_attentive_humans = set(non_attentive_humans)
 
         for human in self.humans:
 
-
-            # observation for humans is always coordinates
+                # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
 
-            for na_human in non_attentive_humans:
-                na_human.set_non_attentive()
-                print(na_human.get_observable_state())
-                if self.robot.visible and human != na_human:
+
+
+            if human not in non_attentive_humans:
+                print("attentive")
+                human.set_attentive()
+
+                if self.robot.visible:
                     ob += [self.robot.get_observable_state()]
+
+            elif human in non_attentive_humans:
+                # print("disattentive")
+                human.set_non_attentive()
+
+            print(human.get_observable_state())
 
             human_actions.append(human.act(ob))
 
@@ -352,7 +362,30 @@ class CrowdSim_mixed(gym.Env):
                     sign = -1
                 else:
                     sign = 1
-                human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
+                human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign,
+                          (np.random.random() - 0.5) * self.square_width, 0, 0, 0)
+
+                # else:
+        #     print("equal")
+        #     human.set_non_attentive()
+        #     ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+        #     print(human.get_observable_state())
+
+            # elif [human.get_observable_state() == na_human.get_observable_state() for na_human in non_attentive_humans]:
+                #     print("equal")
+                #     human.set_non_attentive()
+
+
+                # print(human.get_observable_state())
+
+                human_actions.append(human.act(ob))
+
+                if human.reached_destination():
+                    if np.random.random() > 0.5:
+                        sign = -1
+                    else:
+                        sign = 1
+                    human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
 
         # collision detection
         dmin = float('inf')
