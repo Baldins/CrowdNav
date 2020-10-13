@@ -3,6 +3,7 @@ import gym
 import matplotlib.lines as mlines
 import numpy as np
 import rvo2
+import time
 import random
 from matplotlib import patches
 from numpy.linalg import norm
@@ -318,10 +319,10 @@ class CrowdSim_mixed(gym.Env):
 
         return ob
 
-    def onestep_lookahead(self, action):
-        return self.step(action, update=False)
+    def onestep_lookahead(self, action, non_attentive_humans):
+        return self.step(action,non_attentive_humans, update=False)
 
-    def step(self, action, update=True):
+    def step(self, action, non_attentive_humans, update=True):
         """
         Compute actions for all agents, detect collision, update environment and return (ob, reward, done, info)
 
@@ -329,21 +330,35 @@ class CrowdSim_mixed(gym.Env):
 
         human_actions = []
 
-        # get randomly selected humans to
-        non_attentive_humans = Human.get_random_humans()
+        # print(self.global_time)
+        # count = self.global_time
+        # non_attentive_humans = old_non_attentive_humans
+        # if count != 0:
+        # #     old_non_attentive_humans = []
+        # # else:
+        #     old_non_attentive_humans = non_attentive_humans
+        # # only record the first time the human reaches the goal
+        #
+        # if count % 4 == 0:
+        #     print("true")
+        #
+        #     non_attentive_humans = random.sample(self.humans, int(len(self.humans) / 2))
+        #     old_non_attentive_humans = non_attentive_humans
+        #
+        # # else:
+        # #     non_attentive_humans = old_non_attentive_humans
 
 
-        non_attentive_humans = set(non_attentive_humans)
+        # non_attentive_humans = set(non_attentive_humans)
 
-        for human in self.humans:
-
+        for i, human in enumerate(self.humans):
                 # observation for humans is always coordinates
             ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
 
 
 
             if human not in non_attentive_humans:
-                print("attentive")
+                # print("attentive")
                 human.set_attentive()
 
                 if self.robot.visible:
@@ -353,7 +368,7 @@ class CrowdSim_mixed(gym.Env):
                 # print("disattentive")
                 human.set_non_attentive()
 
-            print(human.get_observable_state())
+            # print(human.get_observable_state())
 
             human_actions.append(human.act(ob))
 
@@ -365,27 +380,6 @@ class CrowdSim_mixed(gym.Env):
                 human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign,
                           (np.random.random() - 0.5) * self.square_width, 0, 0, 0)
 
-                # else:
-        #     print("equal")
-        #     human.set_non_attentive()
-        #     ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
-        #     print(human.get_observable_state())
-
-            # elif [human.get_observable_state() == na_human.get_observable_state() for na_human in non_attentive_humans]:
-                #     print("equal")
-                #     human.set_non_attentive()
-
-
-                # print(human.get_observable_state())
-
-                human_actions.append(human.act(ob))
-
-                if human.reached_destination():
-                    if np.random.random() > 0.5:
-                        sign = -1
-                    else:
-                        sign = 1
-                    human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
 
         # collision detection
         dmin = float('inf')
@@ -414,8 +408,6 @@ class CrowdSim_mixed(gym.Env):
                 dmin = closest_dist
             elif closest_dist < 3:
                 ppl_count += 1
-
-
 
         # collision detection between humans
         human_num = len(self.humans)
@@ -504,8 +496,17 @@ class CrowdSim_mixed(gym.Env):
             ax.set_xlim(-4, 4)
             ax.set_ylim(-4, 4)
             for human in self.humans:
-                human_circle = plt.Circle(human.get_position(), human.radius, fill=False, color='b')
+
+                human_circle = plt.Circle(human.get_position(), human.radius, fill=True, color='b')
                 ax.add_artist(human_circle)
+
+            # for i in range(len(self.humans)):
+            #     if self.humans[i].attentive == False:
+            #         humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=True, color=cmap(i))
+            #
+            #     elif self.humans[i].attentive == True:
+            #         humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=False, color=cmap(i))
+
             ax.add_artist(plt.Circle(self.robot.get_position(), self.robot.radius, fill=True, color='r'))
             plt.show()
         elif mode == 'traj':
@@ -524,6 +525,13 @@ class CrowdSim_mixed(gym.Env):
                     robot = plt.Circle(robot_positions[k], self.robot.radius, fill=True, color=robot_color)
                     humans = [plt.Circle(human_positions[k][i], self.humans[i].radius, fill=False, color=cmap(i))
                               for i in range(len(self.humans))]
+                    for i in range(len(self.humans)):
+                        if self.humans[i].attentive == False:
+                            humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=True,color=cmap(i))
+
+                        elif self.humans[i].attentive == True:
+                            humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=False,color=cmap(i))
+
                     ax.add_artist(robot)
                     for human in humans:
                         ax.add_artist(human)
@@ -569,12 +577,21 @@ class CrowdSim_mixed(gym.Env):
             human_positions = [[state[1][j].position for j in range(len(self.humans))] for state in self.states]
             humans = [plt.Circle(human_positions[0][i], self.humans[i].radius, fill=False)
                       for i in range(len(self.humans))]
+            for i in range(len(self.humans)):
+                if self.humans[i].attentive == False:
+                    humans[i] = plt.Circle(human_positions[0][i], self.humans[i].radius, fill=True)
+
+                elif self.humans[i].attentive == True:
+                    humans[i] = plt.Circle(human_positions[0][i], self.humans[i].radius, fill=False)
+
             human_numbers = [plt.text(humans[i].center[0] - x_offset, humans[i].center[1] - y_offset, str(i),
                                       color='black', fontsize=12) for i in range(len(self.humans))]
             for i, human in enumerate(humans):
                 ax.add_artist(human)
                 ax.add_artist(human_numbers[i])
-
+            # for i, human in enumerate(humans):
+            #     ax.add_artist(human)
+            #     ax.add_artist(human_numbers[i])
             # add time annotation
             time = plt.text(-1, 5, 'Time: {}'.format(0), fontsize=16)
             ax.add_artist(time)

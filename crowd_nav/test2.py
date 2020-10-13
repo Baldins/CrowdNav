@@ -10,6 +10,8 @@ from crowd_nav.utils.explorer import Explorer
 from crowd_nav.policy.policy_factory import policy_factory
 from crowd_sim.envs.utils.robot import Robot
 from crowd_sim.envs.policy.orca import ORCA
+from crowd_sim.envs.utils.human import Human
+
 from crowd_sim.envs.policy.socialforce import SocialForce
 import matplotlib.pyplot as plt
 # from crowd_sim.envs.policy.ssp import SSP
@@ -114,17 +116,29 @@ def main():
 
         done = False
         last_pos = np.array(robot.get_position())
+        non_attentive_humans = Human.get_random_humans()
+        non_attentive_humans = set(non_attentive_humans)
 
         while not done:
 
-            action = robot.act(ob)
+            # print(env.global_time)
+            # count = env.global_time
+            # if count != 0:
+            #     #     old_non_attentive_humans = []
+            #     # else:
+            #     old_non_attentive_humans = non_attentive_humans
+            # # only record the first time the human reaches the goal
 
-            ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin = env.step(action)
+            # if count % 4 == 0:
+            #     print("true")
+            #
+            #     non_attentive_humans = Human.get_random_humans()
+            #     old_non_attentive_humans = non_attentive_humans
+            # # else:
+            # non_attentive_humans = old_non_attentive_humans
 
-            # collision_count = 0
-            # if info == "Collision":
-            # # print(info)
-            #     collision_count = 1
+            action = robot.act(ob, non_attentive_humans)
+            ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin = env.step(action, non_attentive_humans)
 
             ppl_local.append(ppl_count)
             robot_states.append(robot_pose)

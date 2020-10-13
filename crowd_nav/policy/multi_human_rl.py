@@ -8,7 +8,7 @@ class MultiHumanRL(CADRL):
     def __init__(self):
         super().__init__()
 
-    def predict(self, state):
+    def predict(self, state,non_attentive_humans):
         """
         A base class for all methods that takes pairwise joint state as input to value network.
         The input to the value network is always of shape (batch_size, # humans, rotated joint state length)
@@ -35,7 +35,7 @@ class MultiHumanRL(CADRL):
             for action in self.action_space:
                 next_self_state = self.propagate(state.self_state, action)
                 if self.query_env:
-                    next_human_states, reward, done, info = self.env.onestep_lookahead(action)
+                    next_human_states, reward, done, info, _, _, _, _ = self.env.onestep_lookahead(action,non_attentive_humans)
                 else:
                     next_human_states = [self.propagate(human_state, ActionXY(human_state.vx, human_state.vy))
                                        for human_state in state.human_states]
