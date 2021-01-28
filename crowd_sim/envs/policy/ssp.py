@@ -12,7 +12,7 @@ class SSP(Policy):
         self.multiagent_training = True
 
 
-    def configure(self, config):
+    def configure(self, config ):
         assert True
 
     def predict(self, state):
@@ -22,7 +22,7 @@ class SSP(Policy):
         for a in state.human_states:
 
             distance = math.sqrt((a.px - self_state.px)**2 + (a.py - self_state.py)**2)
-            if( distance <= 0.8):
+            if( distance <= 0.9):
                 close_obst.append([a.px, a.py, a.radius])
 
 

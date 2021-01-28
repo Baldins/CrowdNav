@@ -353,19 +353,22 @@ class CrowdSim_mixed(gym.Env):
 
         for i, human in enumerate(self.humans):
                 # observation for humans is always coordinates
-            ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+            # ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
 
 
 
             if human not in non_attentive_humans:
                 # print("attentive")
                 human.set_attentive()
+                ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
 
-                if self.robot.visible:
-                    ob += [self.robot.get_observable_state()]
+                # if self.robot.visible:
+                ob += [self.robot.get_observable_state()]
 
             elif human in non_attentive_humans:
                 # print("disattentive")
+                ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+
                 human.set_non_attentive()
 
             # print(human.get_observable_state())
@@ -684,11 +687,11 @@ class CrowdSim_mixed(gym.Env):
             anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
             anim.running = True
 
-            if output_file is not None:
-                ffmpeg_writer = animation.writers['ffmpeg']
-                writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-                anim.save("/home/fbaldini/Desktop/ssp_w_h_orca_5.mp4", writer=writer)
-            else:
-                plt.show()
+            # if output_file is not None:
+            #     ffmpeg_writer = animation.writers['ffmpeg']
+            #     writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
+            #     anim.save("/home/fbaldini/Desktop/ssp_w_h_orca_5.mp4", writer=writer)
+            # else:
+            #     plt.show()
         else:
             raise NotImplementedError

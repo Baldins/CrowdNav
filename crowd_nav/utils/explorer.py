@@ -2,7 +2,7 @@ import logging
 import copy
 import torch
 from crowd_sim.envs.utils.info import *
-
+import random, math
 
 class Explorer(object):
     def __init__(self, env, robot, device, memory=None, gamma=None, target_policy=None):
@@ -40,7 +40,13 @@ class Explorer(object):
             rewards = []
             while not done:
                 action = self.robot.act(ob)
-                ob, reward, done, info = self.env.step(action)
+
+                non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 10)))
+                non_attentive_humans = set(non_attentive_humans)
+                # ob, reward, done, info = self.env.step(action)
+
+                ob, reward, done, info, ppl_count, robot_pose, robot_velocity, dmin = self.env.step(action, non_attentive_humans)
+
                 states.append(self.robot.policy.last_state)
                 actions.append(action)
                 rewards.append(reward)

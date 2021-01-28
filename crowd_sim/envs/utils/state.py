@@ -9,6 +9,7 @@ class FullState(object):
         self.gy = gy
         self.v_pref = v_pref
         self.theta = theta
+        # self.attentive = attentive
 
         self.position = (self.px, self.py)
         self.goal_position = (self.gx, self.gy)

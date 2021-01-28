@@ -10,6 +10,8 @@ from crowd_nav.utils.explorer import Explorer
 from crowd_nav.policy.policy_factory import policy_factory
 from crowd_sim.envs.utils.robot import Robot
 from crowd_sim.envs.policy.orca import ORCA
+import random
+import math
 from crowd_sim.envs.utils.human import Human
 
 from crowd_sim.envs.policy.socialforce import SocialForce
@@ -31,7 +33,7 @@ def main():
     parser.add_argument('--circle', default=False, action='store_true')
     parser.add_argument('--video_file', type=str, default=False)
     parser.add_argument('--traj', default=False, action='store_true')
-    parser.add_argument('--human_policy',  type=str, default='socialforce')
+    parser.add_argument('--human_policy',  type=str, default='orca')
     parser.add_argument('--trained_env',  type=str, default='socialforce')
     args = parser.parse_args()
 
@@ -106,17 +108,20 @@ def main():
     robot_vel = []
     policy.set_env(env)
     robot.print_info()
+    non_attentive_humans = []
+
     for case in range(args.test_case):
+        print(case)
+        rewards = []
 
         # if args.visualize:
 
         ob = env.reset(test_case=case)
 
         # ob = env.reset(args.phase, case)
-
         done = False
         last_pos = np.array(robot.get_position())
-        non_attentive_humans = Human.get_random_humans()
+        non_attentive_humans = random.sample(env.humans, int(math.ceil(env.human_num/10)))
         non_attentive_humans = set(non_attentive_humans)
 
         while not done:
@@ -137,8 +142,9 @@ def main():
             # # else:
             # non_attentive_humans = old_non_attentive_humans
 
-            action = robot.act(ob, non_attentive_humans)
+            action = robot.act(ob)
             ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin = env.step(action, non_attentive_humans)
+            rewards.append(_)
 
             ppl_local.append(ppl_count)
             robot_states.append(robot_pose)
@@ -148,6 +154,10 @@ def main():
             current_pos = np.array(robot.get_position())
             logging.debug('Speed: %.2f', np.linalg.norm(current_pos - last_pos) / robot.time_step)
             last_pos = current_pos
+
+        gamma = 0.9
+        cumulative_reward = sum([pow(gamma, t * robot.time_step * robot.v_pref)
+                                 * reward for t, reward in enumerate(rewards)])
             #
         # #
         # # # # # #
@@ -274,6 +284,7 @@ def main():
         Time_data['std_local'] = np.std(ppl_local)
         Time_data['collision_flag'] = info
         Time_data['dmin'] = dmin
+        Time_data['reward'] = cumulative_reward
         Time_data.to_csv(main+maindir + method_dir + f'{PPL}/time_{PPL}/robot_time_data_seconds_{PPL}_{case}.csv')
 
         if not os.path.exists(main+maindir + method_dir + f'{PPL}/localdensity_{PPL}'):

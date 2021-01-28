@@ -1,6 +1,7 @@
 from crowd_sim.envs.utils.agent import Agent
 from crowd_sim.envs.utils.state import JointState
 import random
+import math
 import numpy as np
 
 class Human(Agent):
@@ -20,7 +21,7 @@ class Human(Agent):
         return action
 
     @classmethod
-    def get_random_humans(cls):
-        return random.sample(cls.humans, int(len(Human.humans)/2))
+    def get_random_humans(cls, human_num):
+        return random.sample(cls.humans, int(math.ceil(human_num/10)))
 
 
