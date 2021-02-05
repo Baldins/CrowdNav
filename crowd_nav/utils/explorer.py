@@ -39,10 +39,12 @@ class Explorer(object):
             actions = []
             rewards = []
             while not done:
-                action = self.robot.act(ob)
-
-                non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 10)))
+                non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 50)))
                 non_attentive_humans = set(non_attentive_humans)
+
+                print(non_attentive_humans)
+                action = self.robot.act(ob,non_attentive_humans)
+
                 # ob, reward, done, info = self.env.step(action)
 
                 ob, reward, done, info, ppl_count, robot_pose, robot_velocity, dmin = self.env.step(action, non_attentive_humans)

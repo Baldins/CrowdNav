@@ -7,6 +7,7 @@ from crowd_sim.envs.policy.policy import Policy
 from crowd_sim.envs.utils.action import ActionRot, ActionXY
 from crowd_sim.envs.utils.state import ObservableState, FullState
 
+import random, math
 
 def mlp(input_dim, mlp_dims, last_relu=False):
     layers = []
@@ -128,7 +129,7 @@ class CADRL(Policy):
 
         return next_state
 
-    def predict(self, state, non_attentive_humans):
+    def predict(self, state):
         """
         Input state is the joint state of robot concatenated by the observable state of other agents
 
@@ -153,6 +154,11 @@ class CADRL(Policy):
             self.action_values = list()
             max_min_value = float('-inf')
             max_action = None
+
+            # non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 10)))
+            non_attentive_humans= []
+            non_attentive_humans = set(non_attentive_humans)
+
             for action in self.action_space:
                 next_self_state = self.propagate(state.self_state, action)
                 ob, reward, done, info,_,_,_,_ = self.env.onestep_lookahead(action, non_attentive_humans)

@@ -82,7 +82,7 @@ class Agent(object):
 
 
     def get_full_state(self):
-        return FullState(self.px, self.py, self.vx, self.vy, self.radius, self.gx, self.gy, self.v_pref, self.theta)
+        return FullState(self.px, self.py, self.vx, self.vy, self.radius, self.gx, self.gy, self.v_pref, self.theta, self.attentive)
 
     def get_position(self):
         return self.px, self.py

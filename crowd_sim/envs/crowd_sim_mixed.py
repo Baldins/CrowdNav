@@ -683,9 +683,9 @@ class CrowdSim_mixed(gym.Env):
                 else:
                     anim.event_source.start()
 
-            fig.canvas.mpl_connect('key_press_event', on_click)
-            anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
-            anim.running = True
+            # fig.canvas.mpl_connect('key_press_event', on_click)
+            # anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
+            # anim.running = True
 
             # if output_file is not None:
             #     ffmpeg_writer = animation.writers['ffmpeg']

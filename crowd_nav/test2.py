@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser('Parse configuration file')
     parser.add_argument('--env_config', type=str, default='configs/env.config')
     parser.add_argument('--policy_config', type=str, default='configs/policy.config')
-    parser.add_argument('--policy', type=str, default='ssp')
+    parser.add_argument('--policy', type=str, default='cadrl')
     parser.add_argument('--model_dir', type=str, default=None)
     parser.add_argument('--il', default=False, action='store_true')
     parser.add_argument('--gpu', default=False, action='store_true')
@@ -121,7 +121,8 @@ def main():
         # ob = env.reset(args.phase, case)
         done = False
         last_pos = np.array(robot.get_position())
-        non_attentive_humans = random.sample(env.humans, int(math.ceil(env.human_num/10)))
+        # non_attentive_humans = random.sample(env.humans, int(math.ceil(env.human_num/10)))
+        non_attentive_humans = []
         non_attentive_humans = set(non_attentive_humans)
 
         while not done:
@@ -233,6 +234,14 @@ def main():
                 os.mkdir(main+maindir + method_dir)
         if (robot_policy == 'cadrl' and trained_env == 'socialforce'):
             method_dir = 'cadrl_social/'
+            if not os.path.exists(main+maindir + method_dir):
+                os.mkdir(main+maindir + method_dir)
+        if (robot_policy == 'cadrl'and trained_env == 'orca_new'):
+            method_dir = 'cadrl_new/'
+            if not os.path.exists(main+maindir + method_dir):
+                os.mkdir(main+maindir + method_dir)
+        if (robot_policy == 'cadrl'and trained_env == 'socialforce_new'):
+            method_dir = 'cadrl_social_new/'
             if not os.path.exists(main+maindir + method_dir):
                 os.mkdir(main+maindir + method_dir)
 
