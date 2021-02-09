@@ -9,3 +9,8 @@ register(
     id='CrowdSim_mixed-v0',
     entry_point='crowd_sim.envs:CrowdSim_mixed'
 )
+
+register(
+    id='CrowdSim_eth-v0',
+    entry_point='crowd_sim.envs:CrowdSim_eth'
+)

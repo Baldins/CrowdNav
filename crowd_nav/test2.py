@@ -145,6 +145,8 @@ def main():
 
             action = robot.act(ob)
             ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin = env.step(action, non_attentive_humans)
+            # ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin = env.step(action)
+
             rewards.append(_)
 
             ppl_local.append(ppl_count)
