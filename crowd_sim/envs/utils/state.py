@@ -22,6 +22,11 @@ class FullState(object):
         return ' '.join([str(x) for x in [self.px, self.py, self.vx, self.vy, self.radius, self.gx, self.gy,
                                           self.v_pref, self.theta,self.attentive]])
 
+    def to_tuple(self):
+        return self.px, self.py, self.vx, self.vy, self.radius, self.gx, self.gy, self.v_pref, self.theta, self.attentive
+
+    def get_observable_state(self):
+        return ObservableState(self.px, self.py, self.vx, self.vy, self.radius,self.attentive)
 
 class ObservableState(object):
     def __init__(self, px, py, vx, vy, radius, attentive):
@@ -41,6 +46,9 @@ class ObservableState(object):
     def __str__(self):
         return ' '.join([str(x) for x in [self.px, self.py, self.vx, self.vy, self.radius, self.attentive]])
 
+    def to_tuple(self):
+        return self.px, self.py, self.vx, self.vy, self.radius
+
 
 class JointState(object):
     def __init__(self, self_state, human_states):
@@ -50,3 +58,16 @@ class JointState(object):
 
         self.self_state = self_state
         self.human_states = human_states
+
+
+def tensor_to_joint_state(state):
+    robot_state, human_states = state
+
+    robot_state = robot_state.cpu().squeeze().data.numpy()
+    robot_state = FullState(robot_state[0], robot_state[1], robot_state[2], robot_state[3], robot_state[4],
+                            robot_state[5], robot_state[6], robot_state[7], robot_state[8])
+    human_states = human_states.cpu().squeeze(0).data.numpy()
+    human_states = [ObservableState(human_state[0], human_state[1], human_state[2], human_state[3],
+                                    human_state[4]) for human_state in human_states]
+
+    return JointState(robot_state, human_states)
