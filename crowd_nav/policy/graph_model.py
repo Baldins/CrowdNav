@@ -104,7 +104,6 @@ class RGL(nn.Module):
         :return:
         """
         robot_state, human_states = state
-
         # compute feature matrix X
         robot_state_embedings = self.w_r(robot_state)
         human_state_embedings = self.w_h(human_states)

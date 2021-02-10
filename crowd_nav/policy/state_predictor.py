@@ -17,7 +17,7 @@ class StatePredictor(nn.Module):
         self.human_motion_predictor = mlp(config.gcn.X_dim, config.model_predictive_rl.motion_predictor_dims)
         self.time_step = time_step
 
-    def forward(self, state, action, non_attentive_humans, detach=False):
+    def forward(self, state, action, detach=False):
         """ Predict the next state tensor given current state as input.
 
         :return: tensor of shape (batch_size, # of agents, feature_size)
@@ -45,6 +45,7 @@ class StatePredictor(nn.Module):
 
         # px, py, vx, vy, radius, gx, gy, v_pref, theta
         next_state = robot_state.clone().squeeze()
+        self.time_step = 0.25
         if self.kinematics == 'holonomic':
             next_state[0] = next_state[0] + action.vx * self.time_step
             next_state[1] = next_state[1] + action.vy * self.time_step

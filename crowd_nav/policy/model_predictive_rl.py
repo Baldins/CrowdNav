@@ -189,7 +189,7 @@ class ModelPredictiveRL(Policy):
         self.rotations = rotations
         self.action_space = action_space
 
-    def predict(self, state, non_attentive_humans):
+    def predict(self, state):
         """
         A base class for all methods that takes pairwise joint state as input to value network.
         The input to the value network is always of shape (batch_size, # humans, rotated joint state length)
@@ -203,7 +203,7 @@ class ModelPredictiveRL(Policy):
         if self.reach_destination(state):
             return ActionXY(0, 0) if self.kinematics == 'holonomic' else ActionRot(0, 0)
         if self.action_space is None:
-            self.build_action_space(state.robot_state.v_pref)
+            self.build_action_space(state.self_state.v_pref)
 
         probability = np.random.random()
         if self.phase == 'train' and probability < self.epsilon:
@@ -218,10 +218,15 @@ class ModelPredictiveRL(Policy):
                 action_space_clipped = self.action_clip(state_tensor, self.action_space, self.planning_width)
             else:
                 action_space_clipped = self.action_space
+            # non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 10)))
+            non_attentive_humans= []
+            non_attentive_humans = set(non_attentive_humans)
 
             for action in action_space_clipped:
+                # state_tensor = state.to_tensor(add_batch_size=True, device=self.device)
                 state_tensor = state.to_tensor(add_batch_size=True, device=self.device)
-                next_state = self.state_predictor(state_tensor, action, non_attentive_humans)
+
+                next_state = self.state_predictor(state_tensor, action)
                 max_next_return, max_next_traj = self.V_planning(next_state, self.planning_depth, self.planning_width)
                 reward_est = self.estimate_reward(state, action)
                 value = reward_est + self.get_normalized_gamma() * max_next_return
@@ -309,7 +314,7 @@ class ModelPredictiveRL(Policy):
         if isinstance(state, list) or isinstance(state, tuple):
             state = tensor_to_joint_state(state)
         human_states = state.human_states
-        robot_state = state.robot_state
+        robot_state = state.self_state
 
         dmin = float('inf')
         collision = False
@@ -363,7 +368,7 @@ class ModelPredictiveRL(Policy):
         :param state:
         :return: tensor of shape (# of agent, len(state))
         """
-        robot_state_tensor = torch.Tensor([state.robot_state.to_tuple()]).to(self.device)
+        robot_state_tensor = torch.Tensor([state.self_state.to_tuple()]).to(self.device)
         human_states_tensor = torch.Tensor([human_state.to_tuple() for human_state in state.human_states]). \
             to(self.device)
 

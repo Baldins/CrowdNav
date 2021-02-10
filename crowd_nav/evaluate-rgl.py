@@ -23,8 +23,8 @@ import pdb
 # model_dir = "navigation-algorithms/sarl/crowd_nav/data/sarl_og_10"
 # data_dir = "navigation-algorithms/sarl/crowd_nav/data/eth-ucy/eth_train.pkl"
 data_dir = "eth_data/eth_train_with_vel.pkl" # 150 peds
-plot_folder = "/home/fbaldini/GitHub/CrowdNav/results_eth/rgl/plots/rgl/partial_traj/"
-metrics_folder = "/home/fbaldini/GitHub/CrowdNav/results_eth/rgl/metrics/rgl/partial_traj/"
+plot_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/mprl_social/plots/mprl_social/partial_traj/"
+metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/mprl_social/metrics/mprl_social/partial_traj/"
 
 start_index = None  # start robot and ped from specific time index
 num_steps = None  # set goal after no. of time steps
@@ -66,12 +66,12 @@ def set_parameters(run_number):
 
 def main():
     parser = argparse.ArgumentParser('Parse configuration file')
-    parser.add_argument('--config', type=str, default='configs/icra_benchmark/rgl.py')
-    parser.add_argument('--env_config', type=str, default='configs/icra_benchmark/eth_env.config')
+    parser.add_argument('--config', type=str, default='configs/icra_benchmark/mp_separate.py')
+    parser.add_argument('--env_config', type=str, default='data/ORCA/mprl/eth_env.config')
     # parser.add_argument('--env_config', type=str, default='configs/env.config')
     parser.add_argument('--policy_config', type=str, default='configs/icra_benchmark/policy.config')
-    parser.add_argument('--policy', type=str, default='rgl')
-    parser.add_argument('--model_dir', type=str, default='data/ORCA/rgl')
+    parser.add_argument('--policy', type=str, default='model_predictive_rl')
+    parser.add_argument('--model_dir', type=str, default='data/SocialForce/mprl_on_social')
     parser.add_argument('--il', default=False, action='store_true')
     parser.add_argument('--rl', default=False, action='store_true')
     parser.add_argument('--gpu', default=False, action='store_true')
@@ -242,6 +242,7 @@ def main():
         env.test_sim = 'circle_crossing'
     if args.rect:
         env.test_sim = 'rectangle_crossing'
+
     robot = Robot(env_config, 'robot')
     robot.set_policy(policy)
     env.set_robot(robot, v_pref=robot_vel)

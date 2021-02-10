@@ -22,8 +22,8 @@ import pdb
 # model_dir = "navigation-algorithms/sarl/crowd_nav/data/sarl_og_10"
 # data_dir = "navigation-algorithms/sarl/crowd_nav/data/eth-ucy/eth_train.pkl"
 data_dir = "eth_data/eth_train_with_vel.pkl" # 150 peds
-plot_folder = "/home/fbaldini/GitHub/CrowdNav/results_eth/cadrl/plots/cadrl1/partial_traj/"
-metrics_folder = "/home/fbaldini/GitHub/CrowdNav/results_eth/cadrl/metrics/cadrl1/partial_traj/"
+plot_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/plots/sarl_social1/partial_traj/"
+metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/partial_traj/"
 
 start_index = None  # start robot and ped from specific time index
 num_steps = None  # set goal after no. of time steps
@@ -68,8 +68,8 @@ def main():
     parser.add_argument('--env_config', type=str, default='configs/eth_env.config')
     # parser.add_argument('--env_config', type=str, default='configs/env.config')
     parser.add_argument('--policy_config', type=str, default='configs/policy.config')
-    parser.add_argument('--policy', type=str, default='cadrl')
-    parser.add_argument('--model_dir', type=str, default='data/ORCA/cadrl')
+    parser.add_argument('--policy', type=str, default='sarl')
+    parser.add_argument('--model_dir', type=str, default='data/SocialForce/sarl_on_social')
     parser.add_argument('--il', default=False, action='store_true')
     parser.add_argument('--gpu', default=False, action='store_true')
     parser.add_argument('--visualize', default=False, action='store_true')
