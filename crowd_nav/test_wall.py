@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 def main():
     parser = argparse.ArgumentParser('Parse configuration file')
-    parser.add_argument('--env_config', type=str, default='configs/env.config')
+    parser.add_argument('--env_config', type=str, default='configs/env_wall.config')
     parser.add_argument('--policy_config', type=str, default='configs/policy.config')
     parser.add_argument('--policy', type=str, default='ssp')
     parser.add_argument('--model_dir', type=str, default=None)
@@ -27,9 +27,10 @@ def main():
     parser.add_argument('--test_case', type=int, default=2)
     parser.add_argument('--square', default=False, action='store_true')
     parser.add_argument('--circle', default=False, action='store_true')
-    parser.add_argument('--video_file', type=str, default=False)
+    parser.add_argument('--wall', default=False, action='store_true')
+    parser.add_argument('--video_file', type=str, default=True)
     parser.add_argument('--traj', default=False, action='store_true')
-    parser.add_argument('--human_policy',  type=str, default='socialforce')
+    parser.add_argument('--human_policy',  type=str, default='orca')
     parser.add_argument('--trained_env',  type=str, default='socialforce')
     args = parser.parse_args()
 
@@ -71,6 +72,8 @@ def main():
     env = gym.make('CrowdSim_wall-v0')
     env.configure(env_config)
     if args.square:
+        env.test_sim = 'square_crossing'
+    if args.wall:
         env.test_sim = 'wall_crossing'
     if args.circle:
         env.test_sim = 'circle_crossing'
@@ -100,8 +103,11 @@ def main():
         logging.info('ORCA agent buffer: %f', robot.policy.safety_space)
 
     ppl_local = []
+    frame_lst = []
+    frame_num = 0
     robot_states = []
-    robot_vel = []
+    agent_states = pd.DataFrame()
+    agent_vel = []
     policy.set_env(env)
     robot.print_info()
     for case in range(args.test_case):
@@ -118,22 +124,32 @@ def main():
         while not done:
 
             action = robot.act(ob)
+            ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin, humans = env.step(action)
+            for j, human in enumerate(humans):
+                agent_states["Frame"] = frame_num
+                agent_states["ID"] = j+1
+                agent_states["px"] = human.px
+                agent_states["py"] = human.py
 
-            ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin = env.step(action)
-
+                # agent_states.append((frame_num, j+1, human.px, human.py))
             # collision_count = 0
             # if info == "Collision":
             # # print(info)
             #     collision_count = 1
 
             ppl_local.append(ppl_count)
-            robot_states.append(robot_pose)
-            robot_vel.append(robot_velocity)
-
+            # agent_states.append((frame_num, 0, robot_pose))
+            # robot_vel.append(robot_velocity)
+            agent_states["Frame"] = frame_num
+            agent_states["ID"] = 0
+            agent_states["px"] = robot_pose[0]
+            agent_states["py"] = robot_pose[1]
 
             current_pos = np.array(robot.get_position())
             logging.debug('Speed: %.2f', np.linalg.norm(current_pos - last_pos) / robot.time_step)
             last_pos = current_pos
+
+            frame_num += 1
             #
         # #
         # # # # # #
@@ -141,11 +157,11 @@ def main():
         #     env.render('traj', args.video_file)
         # else:
         #     env.render('video', args.video_file)
-
+        #
 
         logging.info('It takes %.2f seconds to finish. Final status is %s', env.global_time, info)
 
-
+        agent_states.head(20)
         if robot.visible and info == 'reach goal':
             human_times = env.get_human_times()
 
@@ -154,123 +170,126 @@ def main():
         # logging.info('PPl counter ', ppl_local)
 
 
-
-        # logging.info('PPl counter ', ppl_local)
-        main = "Results/"
-        human_policy = args.human_policy
-        trained_env = args.trained_env
-
-        if human_policy == 'socialforce':
-            maindir = 'SocialForce/'
-            if not os.path.exists(main+maindir):
-                os.mkdir(main+maindir)
-        else:
-            maindir =  'ORCA/'
-            if not os.path.exists(main+maindir):
-                os.mkdir(main+maindir)
-
-        robot_policy = args.policy
-        trained_env = args.trained_env
-        if robot_policy == 'ssp':
-            method_dir = 'ssp/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-        if (robot_policy == 'model_predictive_rl'and trained_env == 'orca'):
-            method_dir = 'model_predictive_rl/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-        if (robot_policy == 'model_predictive_rl' and trained_env == 'socialforce'):
-            method_dir = 'model_predictive_rl_social/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-
-        if (robot_policy == 'rgl'and trained_env == 'orca'):
-            method_dir = 'rgl/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-        if (robot_policy == 'rgl' and trained_env == 'socialforce'):
-            method_dir = 'rgl_social/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-
-        if (robot_policy == 'sarl'and trained_env == 'orca'):
-            method_dir = 'sarl/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-        if (robot_policy == 'sarl' and trained_env == 'socialforce'):
-            method_dir = 'sarl_social/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-
-
-        if (robot_policy == 'cadrl'and trained_env == 'orca'):
-            method_dir = 'cadrl/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-        if (robot_policy == 'cadrl' and trained_env == 'socialforce'):
-            method_dir = 'cadrl_social/'
-            if not os.path.exists(main+maindir + method_dir):
-                os.mkdir(main+maindir + method_dir)
-
-
-        if robot_policy == 'ssp2':
-            method_dir = 'ssp2/'
-            if not os.path.exists(main+maindir+method_dir):
-                os.mkdir(main+maindir+method_dir)
-        # elif robot_policy == 'cadrl':
-        #     method_dir = 'cadrl/'
-        #     if not os.path.exists(maindir+method_dir):
-        #         os.mkdir(maindir+method_dir)
-        # elif robot_policy == 'sarl':
+        #
+        # # logging.info('PPl counter ', ppl_local)
+        # main = "Results/"
+        # human_policy = args.human_policy
+        # trained_env = args.trained_env
+        #
+        # if human_policy == 'socialforce':
+        #     maindir = 'SocialForce/'
+        #     if not os.path.exists(main+maindir):
+        #         os.mkdir(main+maindir)
+        # else:
+        #     maindir =  'ORCA/'
+        #     if not os.path.exists(main+maindir):
+        #         os.mkdir(main+maindir)
+        #
+        # robot_policy = args.policy
+        # trained_env = args.trained_env
+        # if robot_policy == 'ssp':
+        #     method_dir = 'ssp/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        # if (robot_policy == 'model_predictive_rl'and trained_env == 'orca'):
+        #     method_dir = 'model_predictive_rl/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        # if (robot_policy == 'model_predictive_rl' and trained_env == 'socialforce'):
+        #     method_dir = 'model_predictive_rl_social/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        #
+        # if (robot_policy == 'rgl'and trained_env == 'orca'):
+        #     method_dir = 'rgl/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        # if (robot_policy == 'rgl' and trained_env == 'socialforce'):
+        #     method_dir = 'rgl_social/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        #
+        # if (robot_policy == 'sarl'and trained_env == 'orca'):
         #     method_dir = 'sarl/'
-        #     if not os.path.exists(maindir+method_dir):
-        #         os.mkdir(maindir+method_dir)
-        # elif robot_policy == 'lstm_rl':
-        #     method_dir = 'lstm_rl/'
-        #     if not os.path.exists(maindir+method_dir):
-        #         os.mkdir(maindir+method_dir)
-        elif robot_policy == 'orca':
-            method_dir = 'orca/'
-            if not os.path.exists(main+maindir+method_dir):
-                os.mkdir(main+maindir+method_dir)
-
-        robot_data = pd.DataFrame()
-        robot_data['robot_x'] = np.array(robot_states)[:, 0]
-        robot_data['robot_y'] = np.array(robot_states)[:, 1]
-        robot_data['local_ppl_cnt'] = np.array(ppl_local)
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        # if (robot_policy == 'sarl' and trained_env == 'socialforce'):
+        #     method_dir = 'sarl_social/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        #
+        #
+        # if (robot_policy == 'cadrl'and trained_env == 'orca'):
+        #     method_dir = 'cadrl/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        # if (robot_policy == 'cadrl' and trained_env == 'socialforce'):
+        #     method_dir = 'cadrl_social/'
+        #     if not os.path.exists(main+maindir + method_dir):
+        #         os.mkdir(main+maindir + method_dir)
+        #
+        #
+        # if robot_policy == 'ssp2':
+        #     method_dir = 'ssp2/'
+        #     if not os.path.exists(main+maindir+method_dir):
+        #         os.mkdir(main+maindir+method_dir)
+        # # elif robot_policy == 'cadrl':
+        # #     method_dir = 'cadrl/'
+        # #     if not os.path.exists(maindir+method_dir):
+        # #         os.mkdir(maindir+method_dir)
+        # # elif robot_policy == 'sarl':
+        # #     method_dir = 'sarl/'
+        # #     if not os.path.exists(maindir+method_dir):
+        # #         os.mkdir(maindir+method_dir)
+        # # elif robot_policy == 'lstm_rl':
+        # #     method_dir = 'lstm_rl/'
+        # #     if not os.path.exists(maindir+method_dir):
+        # #         os.mkdir(maindir+method_dir)
+        # elif robot_policy == 'orca':
+        #     method_dir = 'orca/'
+        #     if not os.path.exists(main+maindir+method_dir):
+        #         os.mkdir(main+maindir+method_dir)
+        #
+        # agent_data = pd.DataFrame()
+        #
+        # agent_data['Frame'] = agent_states[0][:, 0]
+        # agent_data['ID'] = agent_states[0][:, 1]
+        # agent_data['px'] = agent_states[0][:, 2]
+        # agent_data['py'] = agent_states[0][:, 3]
+        # agent_data['local_ppl_cnt'] = np.array(ppl_local)
         # robot_data['dmin'] = np.array(dmin)
 
-        out_name = f'robot_data{case}.csv'
+        out_name = f'agent_data{case}.csv'
 
-        if not os.path.exists(main+maindir + method_dir + f'{PPL}/'):
-            os.mkdir(main+maindir + method_dir + f'{PPL}/')
-        # outdir = f'{PPL}/robot_data_{PPL}/'
-        if not os.path.exists(main+maindir + method_dir + f'{PPL}/robot_data_{PPL}/'):
-            os.mkdir(main+maindir + method_dir + f'{PPL}/robot_data_{PPL}/')
+        # if not os.path.exists(main+maindir + method_dir + f'{PPL}/'):
+        #     os.mkdir(main+maindir + method_dir + f'{PPL}/')
+        # # outdir = f'{PPL}/robot_data_{PPL}/'
+        # if not os.path.exists(main+maindir + method_dir + f'{PPL}/robot_data_{PPL}/'):
+        #     os.mkdir(main+maindir + method_dir + f'{PPL}/robot_data_{PPL}/')
+        #
+        # fullname = os.path.join(main+maindir + method_dir + f'{PPL}/robot_data_{PPL}/', out_name)
 
-        fullname = os.path.join(main+maindir + method_dir + f'{PPL}/robot_data_{PPL}/', out_name)
+        agent_states.to_csv(out_name, index=True)
 
-        robot_data.to_csv(fullname, index=True)
-
-        if not os.path.exists(main+maindir + method_dir + f'{PPL}/time_{PPL}'):
-            os.mkdir(main+maindir + method_dir + f'{PPL}/time_{PPL}')
-        Time_data = pd.DataFrame()
-        Time_data['time (s)'] = [env.global_time]
-        Time_data['mean_local'] = np.mean(ppl_local)
-        Time_data['std_local'] = np.std(ppl_local)
-        Time_data['collision_flag'] = info
-        Time_data['dmin'] = dmin
-        Time_data.to_csv(main+maindir + method_dir + f'{PPL}/time_{PPL}/robot_time_data_seconds_{PPL}_{case}.csv')
-
-        if not os.path.exists(main+maindir + method_dir + f'{PPL}/localdensity_{PPL}'):
-            os.mkdir(main+maindir + method_dir + f'{PPL}/localdensity_{PPL}')
-        LD = pd.DataFrame()
-        LD['local_ppl_cnt'] = np.array(ppl_local)
-        LD['vx'] = np.array(robot_vel)[:, 0]
-        LD['vy'] = np.array(robot_vel)[:, 1]
-        LD.to_csv(main+maindir + method_dir + f'{PPL}/localdensity_{PPL}/localdensity_{PPL}_{case}.csv')
-
+    #     if not os.path.exists(main+maindir + method_dir + f'{PPL}/time_{PPL}'):
+    #         os.mkdir(main+maindir + method_dir + f'{PPL}/time_{PPL}')
+    #     Time_data = pd.DataFrame()
+    #     Time_data['time (s)'] = [env.global_time]
+    #     Time_data['mean_local'] = np.mean(ppl_local)
+    #     Time_data['std_local'] = np.std(ppl_local)
+    #     Time_data['collision_flag'] = info
+    #     Time_data['dmin'] = dmin
+    #     Time_data.to_csv(main+maindir + method_dir + f'{PPL}/time_{PPL}/robot_time_data_seconds_{PPL}_{case}.csv')
     #
+    #     if not os.path.exists(main+maindir + method_dir + f'{PPL}/localdensity_{PPL}'):
+    #         os.mkdir(main+maindir + method_dir + f'{PPL}/localdensity_{PPL}')
+    #     LD = pd.DataFrame()
+    #     LD['local_ppl_cnt'] = np.array(ppl_local)
+    #     LD['vx'] = np.array(robot_vel)[:, 0]
+    #     LD['vy'] = np.array(robot_vel)[:, 1]
+    #     LD.to_csv(main+maindir + method_dir + f'{PPL}/localdensity_{PPL}/localdensity_{PPL}_{case}.csv')
+    #
+    # #
     # else:
     #     explorer.run_k_episodes(env.case_size[args.phase], args.phase, print_failure=True)
     #

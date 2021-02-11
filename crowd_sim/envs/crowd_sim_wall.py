@@ -40,6 +40,7 @@ class CrowdSim_wall(gym.Env):
         self.train_val_sim = None
         self.test_sim = None
         self.square_width = None
+        self.square_height = None
         self.circle_radius = None
         self.human_num = None
         # for visualization
@@ -64,6 +65,7 @@ class CrowdSim_wall(gym.Env):
         self.train_val_sim = config.get('sim', 'train_val_sim')
         self.test_sim = config.get('sim', 'test_sim')
         self.square_width = config.getfloat('sim', 'square_width')
+        self.square_height = config.getfloat('sim', 'square_height')
         self.circle_radius = config.getfloat('sim', 'circle_radius')
         self.human_num = config.getint('sim', 'human_num')
         # else:
@@ -96,6 +98,10 @@ class CrowdSim_wall(gym.Env):
             self.humans = []
             for i in range(human_num):
                 self.humans.append(self.generate_square_crossing_human())
+        elif rule == 'wall_crossing':
+            self.humans = []
+            for i in range(human_num):
+                self.humans.append(self.generate_wall_crossing_human())
         elif rule == 'circle_crossing':
             self.humans = []
             for i in range(human_num):
@@ -163,8 +169,10 @@ class CrowdSim_wall(gym.Env):
         #     sign = 1
         sign = 1
         while True:
-            px = np.random.random() * self.square_width * 0.5 * sign
-            py = (np.random.random() - 0.5) * self.square_width
+            px = np.random.random() * self.square_height * 0.01 * sign * np.cos(np.pi/2) + 2
+            py = (np.random.random() - 0.01) * self.square_height* np.sin(np.pi/2)
+            # px = self.square_width * 0.1 * sign
+            # py = (- 0.1) * self.square_width
             collide = False
             for agent in [self.robot] + self.humans:
                 if norm((px - agent.px, py - agent.py)) < human.radius + agent.radius + self.discomfort_dist:
@@ -173,8 +181,10 @@ class CrowdSim_wall(gym.Env):
             if not collide:
                 break
         while True:
-            gx = np.random.random() * self.square_width * 0.5 * -sign
-            gy = (np.random.random() - 0.5) * self.square_width
+            gx =  np.random.random() * self.square_height * 0.01 * -sign
+            gy = (np.random.random() - 0.1) * self.square_height
+            # gx = self.square_width * 0.1 * -sign
+            # gy = (- 0.1) * self.square_width
             collide = False
             for agent in [self.robot] + self.humans:
                 if norm((gx - agent.gx, gy - agent.gy)) < human.radius + agent.radius + self.discomfort_dist:
@@ -208,7 +218,7 @@ class CrowdSim_wall(gym.Env):
                     break
             if not collide:
                 break
-        human.set(px, py, -px+1, -py+1, 0, 0, 0)
+        human.set(px, py, 1 -px, 1 -py, 0, 0, 0)
         return human
 
     def generate_square_crossing_human(self):
@@ -253,7 +263,9 @@ class CrowdSim_wall(gym.Env):
         # centralized orca simulator for all humans
         if not self.robot.reached_destination():
             raise ValueError('Episode is not done yet')
-        params = (10, 10, 5, 5)
+        # params = (10, 10, 5, 5)
+
+        params = (0, 0.5, 2, 0.5)
         sim = rvo2.PyRVOSimulator(self.time_step, *params, 0.3, 1)
         sim.addAgent(self.robot.get_position(), *params, self.robot.radius, self.robot.v_pref,
                      self.robot.get_velocity())
@@ -311,7 +323,7 @@ class CrowdSim_wall(gym.Env):
         else:
             counter_offset = {'train': self.case_capacity['val'] + self.case_capacity['test'],
                               'val': 0, 'test': self.case_capacity['val']}
-            self.robot.set(0, -self.circle_radius, 0, self.circle_radius, 0, 0, np.pi / 2)
+            self.robot.set(0, 0.5, 2, 0.5, 0, 0, np.pi / 2)
             if self.case_counter[phase] >= 0:
                 np.random.seed(counter_offset[phase] + self.case_counter[phase])
                 if phase in ['train', 'val']:
@@ -367,13 +379,13 @@ class CrowdSim_wall(gym.Env):
                 ob += [self.robot.get_observable_state()]
             human_actions.append(human.act(ob))
 
-            if human.reached_destination():
-                if np.random.random() > 0.5:
-                    sign = -1
-                else:
-                    sign = 1
-                # human.set_goal_position([ np.random.random(), (np.random.random()) ])
-                human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
+            # if human.reached_destination():
+            #     if np.random.random() > 0.5:
+            #         sign = -1
+            #     else:
+            #         sign = 1
+            #     # human.set_goal_position([ np.random.random(), (np.random.random()) ])
+            #     human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
 
         # collision detection
         dmin = float('inf')
@@ -472,7 +484,7 @@ class CrowdSim_wall(gym.Env):
             elif self.robot.sensor == 'RGB':
                 raise NotImplementedError
 
-        return ob, reward, done, info, ppl_count, self.robot.get_position(), self.robot.get_velocity(), dmin
+        return ob, reward, done, info, ppl_count, self.robot.get_position(), self.robot.get_velocity(), dmin, self.humans
 
     def render(self, mode='human', output_file=None):
         from matplotlib import animation
@@ -489,8 +501,8 @@ class CrowdSim_wall(gym.Env):
 
         if mode == 'human':
             fig, ax = plt.subplots(figsize=(7, 7))
-            ax.set_xlim(-4, 4)
-            ax.set_ylim(-4, 4)
+            ax.set_xlim(0, 2)
+            ax.set_ylim(-1, 1)
             for human in self.humans:
                 human_circle = plt.Circle(human.get_position(), human.radius, fill=False, color='b')
                 ax.add_artist(human_circle)
@@ -499,8 +511,8 @@ class CrowdSim_wall(gym.Env):
         elif mode == 'traj':
             fig, ax = plt.subplots(figsize=(7, 7))
             ax.tick_params(labelsize=16)
-            ax.set_xlim(-5, 5)
-            ax.set_ylim(-5, 5)
+            ax.set_xlim(0, 2)
+            ax.set_ylim(-1, -1)
             ax.set_xlabel('x(m)', fontsize=16)
             ax.set_ylabel('y(m)', fontsize=16)
 
@@ -540,8 +552,8 @@ class CrowdSim_wall(gym.Env):
         elif mode == 'video':
             fig, ax = plt.subplots(figsize=(7, 7))
             ax.tick_params(labelsize=16)
-            ax.set_xlim(-6, 6)
-            ax.set_ylim(-6, 6)
+            ax.set_xlim(0,2)
+            ax.set_ylim(0, 1)
             ax.set_xlabel('x(m)', fontsize=16)
             ax.set_ylabel('y(m)', fontsize=16)
 
@@ -655,11 +667,11 @@ class CrowdSim_wall(gym.Env):
             anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
             anim.running = True
 
-            if output_file is not None:
-                ffmpeg_writer = animation.writers['ffmpeg']
-                writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-                anim.save(output_file, writer=writer)
-            else:
-                plt.show()
+            # if output_file is not None:
+            #     ffmpeg_writer = animation.writers['ffmpeg']
+            #     writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
+            #     anim.save("/home/lambda-rl/Desktop/wall.mp4", writer=writer)
+            # else:
+            plt.show()
         else:
             raise NotImplementedError
