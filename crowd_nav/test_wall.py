@@ -104,9 +104,12 @@ def main():
 
     ppl_local = []
     frame_lst = []
+    agentx = []
+    agenty = []
+    ID_lst = []
     frame_num = 0
     robot_states = []
-    agent_states = pd.DataFrame()
+    agent_states = pd.DataFrame(columns=["Frame", "ID", "px", "py"])
     agent_vel = []
     policy.set_env(env)
     robot.print_info()
@@ -126,10 +129,10 @@ def main():
             action = robot.act(ob)
             ob, _, done, info, ppl_count, robot_pose, robot_velocity, dmin, humans = env.step(action)
             for j, human in enumerate(humans):
-                agent_states["Frame"] = frame_num
-                agent_states["ID"] = j+1
-                agent_states["px"] = human.px
-                agent_states["py"] = human.py
+                frame_lst.append(frame_num)
+                ID_lst.append(j+1)
+                agentx.append(human.px)
+                agenty.append(human.py)
 
                 # agent_states.append((frame_num, j+1, human.px, human.py))
             # collision_count = 0
@@ -140,10 +143,14 @@ def main():
             ppl_local.append(ppl_count)
             # agent_states.append((frame_num, 0, robot_pose))
             # robot_vel.append(robot_velocity)
-            agent_states["Frame"] = frame_num
-            agent_states["ID"] = 0
-            agent_states["px"] = robot_pose[0]
-            agent_states["py"] = robot_pose[1]
+            frame_lst.append(frame_num)
+            ID_lst.append(0)
+            agentx.append(robot_pose[0])
+            agenty.append(robot_pose[1])
+            # agent_states["Frame"] = frame_num
+            # agent_states["ID"] = 0
+            # agent_states["px"] = robot_pose[0]
+            # agent_states["py"] = robot_pose[1]
 
             current_pos = np.array(robot.get_position())
             logging.debug('Speed: %.2f', np.linalg.norm(current_pos - last_pos) / robot.time_step)
@@ -252,10 +259,10 @@ def main():
         #
         # agent_data = pd.DataFrame()
         #
-        # agent_data['Frame'] = agent_states[0][:, 0]
-        # agent_data['ID'] = agent_states[0][:, 1]
-        # agent_data['px'] = agent_states[0][:, 2]
-        # agent_data['py'] = agent_states[0][:, 3]
+        agent_states['Frame'] = frame_lst
+        agent_states['ID'] = ID_lst
+        agent_states['px'] = agentx
+        agent_states['py'] = agenty
         # agent_data['local_ppl_cnt'] = np.array(ppl_local)
         # robot_data['dmin'] = np.array(dmin)
 

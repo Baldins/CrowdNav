@@ -1,7 +1,13 @@
-####################GENERIC LIBRARIES
-from copy import deepcopy
-import math
+
 import time
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import sys
+import math
+import datetime
+from copy import deepcopy
+
 ####################SPECIAL LIBRARIES
 import scipy as sp
 import george
@@ -12,14 +18,9 @@ import autograd.numpy as np
 # import numpy as np
 from autograd.numpy.linalg import solve
 import mpmath as mp
-
-import numpy as np
-import math
 from crowd_sim.envs.policy.policy import Policy
 from crowd_sim.envs.utils.action import ActionXY
-from copy import deepcopy
 from numba import jit
-import scipy as sp
 from scipy import optimize
 
 from crowd_sim.envs.objectives import igp.so_igp_diag_objectives as so_diagonal
@@ -27,25 +28,9 @@ from crowd_sim.envs.objectives import igp.so_igp_dense_objectives as so_dense
 from crowd_sim.envs.objectives import igp.fo_igp_dense_objectives as fo_dense
 
 
-
-####################GENERIC LIBRARIES
-from copy import deepcopy
-import math
-import time
-####################SPECIAL LIBRARIES
-import scipy as sp
-import george
-import autograd as ag
-from autograd import value_and_grad
-#reverse mode is more efficiet for scalar valued functions
-import autograd.numpy as np
-# import numpy as np
-from autograd.numpy.linalg import solve
-import mpmath as mp
-
-class so_IGP(Policy):
     def __init__(self):
-
+        """
+        """
         super().__init__()
         self.name = 'so_IGP'
         self.trainable = False
@@ -59,11 +44,8 @@ class so_IGP(Policy):
         self.radius = 0.3
         self.max_speed = 1
         self.sim = None
-        self.boost_factor = 1.1
 
-        ################TESTING PARAMETERS
-
-        self.fo = False  # FIRST OR SECOND ORDER INTERACTION?
+        self.fo = False # FIRST OR SECOND ORDER INTERACTION?
         self.normalize = False
 
         self.ess_off = False
@@ -81,12 +63,7 @@ class so_IGP(Policy):
         self.vg = False
         self.hess_opt = False
         self.tol = 1e-8
-
-        # opt_method = 'trust-krylov'
         self.opt_method = 'Newton-CG'
-        # opt_method = 'dogleg'
-        # opt_method = 'trust-ncg'
-
         self.dwa = False  # COUPLED IGP
         self.cov_eps = 0.000001
 
@@ -101,93 +78,77 @@ class so_IGP(Policy):
         self.actuate_to_index = False
 
 
+################SAMPLE TESTING PARAMETERS
+        self.random_sample = False
+        self.num_random_samples = 0
+        self.num_show = 0
+
+        self.var_sample = True
+        self.num_var_samples = 3 #8
+        self.var_ratio = 1 #0.5
+        self.num_var_show = 0
+
     def configure(self, config):
+        # self.time_step = config.getfloat('orca', 'time_step')
+        # self.neighbor_dist = config.getfloat('orca', 'neighbor_dist')
+        # self.max_neighbors = config.getint('orca', 'max_neighbors')
+        # self.time_horizon = config.getfloat('orca', 'time_horizon')
+        # self.time_horizon_obst = config.getfloat('orca', 'time_horizon_obst')
+        # self.radius = config.getfloat('orca', 'radius')
+        # self.max_speed = config.getfloat('orca', 'max_speed')
         return
+
 
     def set_phase(self, phase):
         return
 
     def Tdex_newton(self):
-        """
-        input : Tdex_max, frame, num_peds, max_vel_robot, \
-                robot_start_x, robot_start_y, robot_goal_x, robot_goal_y, \
-                vel_x, vel_y, cmd_x, cmd_y, data_set, support_boost, \
-                goal_dex, x_follow, y_follow, normal_vel, follow_traj
-        output: Tdex, robot_goal_x, robot_goal_y
-        """
 
-    def gp_computation_newton(self):
-        """
-        input :frame, num_peds, x, y, x_obs, y_obs, \
-                x_obs_un, y_obs_un, err_magnitude_ped, err_magnitude_robot, \
-                end_point_err_ped, end_point_err_robot, buffer_robot, buffer_ped, \
-                robot_start_x, robot_start_y, robot_goal_x, robot_goal_y, \
-                cmd_x, cmd_y, obs_duration_robot, obs_duration_ped, Tdex, gp_x, gp_y, \
-                num_intents, num_var_samples, var_ratio, dwa, cov_eps, linear_diag
-        return : gp_x, gp_y, mu_linear_conditioned_x, mu_linear_conditioned_y, \
-                mu_linear_un_x, mu_linear_un_y, \
-                cov_linear_conditioned_x, cov_linear_conditioned_y, \
-                cov_un_x, cov_un_y, x_obs, y_obs,\
-                x_obs_un, y_obs_un, joint_sample_x, joint_sample_y, \
-                var_samples_x, var_samples_y, time_gp
-        """
+        return Tdex
 
-    def fo_ess_compute_newton(self):
+    def igp(self,fo, diagonal, ess_boost, ess_num_peds, ess_newton, Tdex_max, frame, \
+            num_peds_follow, max_vel_robot, max_vel_ped, \
+            robot_start_x, robot_start_y, robot_goal_x, robot_goal_y, \
+            vel_x, vel_y, cmd_x, cmd_y, \
+            x_follow, y_follow, x_obs, y_obs, x_obs_un, y_obs_un, \
+            err_magnitude_ped, err_magnitude_robot, end_point_err_ped, \
+            end_point_err_robot, buffer_robot, buffer_ped, obs_duration_robot, \
+            obs_duration_ped, gp_x, gp_y, num_random_samples, num_var_samples, \
+            random_sample, var_sample, tol, ess_time_array, \
+            ess_array, ess_off, normalize, \
+            ll_converge, conditioned, var_ratio, data_set, support_boost, \
+            goal_dex, x_nonzero, y_nonzero, ess_limit, ess_limit_num, \
+            normal_vel, full_traj, dwa, cov_eps, linear_diag, vg, hess_opt, \
+            opt_iter_robot, opt_iter_all, agent_disrupt, robot_agent_disrupt, \
+            opt_method):
 
-        """
-        input: diagonal, num_peds, robot_mu_x, robot_mu_y, \
-                ped_mu_x, ped_mu_y, cov_robot_x, cov_robot_y, \
-                inv_cov_robot_x, inv_cov_robot_y, cov_ped_x, cov_ped_y, \
-                inv_cov_ped_x, inv_cov_ped_y, \
-                one_over_cov_sum_x, one_over_cov_sum_y, normalize
-        outpu: ess, top_Z_indices
+        Tdex = Tdex_newton(Tdex_max, num_peds, self.max_speed,  \                       robot_start_x, robot_start_y, \
+                          robot_goal_x, robot_goal_y, \
+                          vel_x, vel_y, cmd_x, cmd_y, \
+                          data_set, support_boost, \
+                          goal_dex, x_nonzero, y_nonzero, \
+                          normal_vel, full_traj)
 
-        """
+        return x_obs, y_obs, x_obs_un, y_obs_un, robot_mu_x, robot_mu_y, ped_mu_x, ped_mu_y, ess, \
+                top_Z_indices, ess_array, ess_time, ess_time_array, ess_ave_time, \
+                ess_std_time, optima, optimal_ll, optima_dex, num_optima, \
+                norm_likelihood, global_optima_dex, time_gp, \
+                agent_disrupt, robot_agent_disrupt
 
-
-    def optimize_iterate():
-        """
-        input: fo, tol, diagonal, frame, z0, num_peds, ess, \
-      robot_mu_x, robot_mu_y, ped_mu_x, ped_mu_y, cov_robot_x, cov_robot_y, \
-      inv_cov_robot_x, inv_cov_robot_y, cov_ped_x, cov_ped_y, \
-      inv_cov_ped_x, inv_cov_ped_y, one_over_cov_sum_x, one_over_cov_sum_y,  \
-      one_over_cov_sumij_x, one_over_cov_sumij_y, normalize, ll_converge, T, \
-      opt_iter_robot, opt_iter_all):
-        output : z
-        """
-
-
-    def igp(self):
-
-
-
-    def actuate(self):
-        """
-        input : f, T, x_obs, y_obs, max_vel_robot, \
-				    robot_history_x, robot_history_y, frame, \
-				    x_follow, y_follow, num_peds_follow, p2w_x, p2w_y, p2w, \
-				    actuate_distance, actuate_to_step, actuate_to_index
-        returns: robot_history_x, robot_history_y, cmd_x, cmd_y, vel_x, vel_y
-        """
-
-    def gp_computation_newton():
-        """
-        input = frame, num_peds, x, y, x_obs, y_obs, \
-                              x_obs_un, y_obs_un, err_magnitude_ped, err_magnitude_robot, \
-                              end_point_err_ped, end_point_err_robot, buffer_robot, buffer_ped, \
-                              robot_start_x, robot_start_y, robot_goal_x, robot_goal_y, \
-                              cmd_x, cmd_y, obs_duration_robot, obs_duration_ped, Tdex, gp_x, gp_y, \
-                              num_intents, num_var_samples, var_ratio, dwa, cov_eps, linear_diag
-
-        """
-
-    return robot_history_x, robot_history_y, cmd_x, cmd_y, vel_x, vel_y
 
     def predict(self, state):
-        "(self.px, self.py, self.vx, self.vy, self.radius, self.gx, self.gy, self.v_pref, self.theta,self.attentive)"
+        """
+        (self.px, self.py, self.vx, self.vy, self.radius, self.gx, self.gy, self.v_pref, self.theta,self.attentive)
+        """
         self_state = state.self_state
 
+        T = np.size(robot_mu_x)
 
-        action = ActionXY(vx, vy)
+
+        robot_history_x, robot_history_y, cmd_x, cmd_y, vel_x, vel_x \
+            = actuate(a, T, x_obs, y_obs, max_vel_robot, robot_history_x, \
+                      robot_history_y, frame, x_follow, y_follow, num_peds_follow, \
+                      p2w_x, p2w_y, p2w, actuate_distance, actuate_to_step, actuate_to_index)
+        action = ActionXY(vel_x, vy)
 
         return action
