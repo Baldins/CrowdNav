@@ -23,7 +23,7 @@ import pdb
 # data_dir = "navigation-algorithms/sarl/crowd_nav/data/eth-ucy/eth_train.pkl"
 data_dir = "eth_data/eth_train_with_vel.pkl" # 150 peds
 plot_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/plots/sarl_social1/partial_traj/"
-metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/partial_traj/"
+# metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/partial_traj/"
 
 start_index = None  # start robot and ped from specific time index
 num_steps = None  # set goal after no. of time steps
@@ -32,7 +32,7 @@ robot_vel = None  # set preferred robot velocity
 ignore_collisions = True  # keep running robot even after collisions
 time_limit = 100000
 
-runs = get_remove_ped_dict("last_runs")
+runs = get_remove_ped_dict("new_runs")
 
 # distance_list=[]
 # ignore_peds=[]
@@ -69,7 +69,7 @@ def main():
     # parser.add_argument('--env_config', type=str, default='configs/env.config')
     parser.add_argument('--policy_config', type=str, default='configs/policy.config')
     parser.add_argument('--policy', type=str, default='sarl')
-    parser.add_argument('--model_dir', type=str, default='data/SocialForce/sarl_on_social')
+    parser.add_argument('--model_dir', type=str, default='data/ORCA/sarl')
     parser.add_argument('--il', default=False, action='store_true')
     parser.add_argument('--gpu', default=False, action='store_true')
     parser.add_argument('--visualize', default=False, action='store_true')
@@ -265,6 +265,12 @@ if __name__ == '__main__':
 
     for i in range(len(runs.keys())):
         if set_parameters(i):
+            key_name = list(runs.keys())[i]
+            if 'full' not in key_name:
+                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/partial_traj/"
+            else:
+                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/full_traj/"
+            # exit()
             main()
             # exit()
 
