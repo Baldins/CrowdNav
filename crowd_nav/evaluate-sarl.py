@@ -46,21 +46,36 @@ runs = get_remove_ped_dict("new_runs")
 def set_parameters(run_number):
     global start_index, num_steps, remove_ped, robot_vel
     key_name = list(runs.keys())[run_number]
-    if 'full' not in key_name:
-        value = runs[key_name]
-        print(value)
-        # if value[0] != 88:
-        #     return False
-        remove_ped = value[0]
-        # new_runs.append(value)
-        # new_runs_dict[key_name] = value
-        start_index = value[1]
-        num_steps = value[2]
-        robot_vel = None  # set equals to remove ped avg. vel
-        return True
-    else:
-        logging.warn("Ignoring dictionary key %s", key_name)
-        return False
+    # if 'full' not in key_name:
+    #     metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/partial_traj/"
+
+    value = runs[key_name]
+    print(value)
+    # if value[0] != 88:
+    #     return False
+    remove_ped = value[0]
+    # new_runs.append(value)
+    # new_runs_dict[key_name] = value
+    start_index = value[1]
+    num_steps = value[2]
+    robot_vel = None  # set equals to remove ped avg. vel
+    return True
+    # elif 'full' in key_name:
+    #     value = runs[key_name]
+    #     print(value)
+    #     # if value[0] != 88:
+    #     #     return False
+    #     remove_ped = value[0]
+    #     # new_runs.append(value)
+    #     # new_runs_dict[key_name] = value
+    #     start_index = value[1]
+    #     num_steps = value[2]
+    #     robot_vel = None  # set equals to remove ped avg. vel
+    #     metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/full_traj/"
+    #
+    #     # logging.warn("Ignoring dictionary key %s", key_name)
+    #     return True
+
 
 
 def main():
@@ -86,6 +101,7 @@ def main():
     parser.add_argument('--trained_env',  type=str, default='orca')
     parser.add_argument('--resumed', default=False, action='store_true')
     args = parser.parse_args()
+
 
     # if model_dir:
     #     args.model_dir = model_dir
@@ -265,12 +281,14 @@ if __name__ == '__main__':
 
     for i in range(len(runs.keys())):
         if set_parameters(i):
+
             key_name = list(runs.keys())[i]
+            print('key', key_name)
             if 'full' not in key_name:
-                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/partial_traj/"
-            else:
-                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/full_traj/"
-            # exit()
+                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl/metrics/sarl/partial_traj/"
+            elif 'full' in key_name:
+                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl/metrics/sarl/full_traj/"
+            # # exit()
             main()
             # exit()
 

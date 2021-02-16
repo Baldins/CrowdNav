@@ -23,7 +23,7 @@ import pdb
 # data_dir = "navigation-algorithms/sarl/crowd_nav/data/eth-ucy/eth_train.pkl"
 data_dir = "eth_data/eth_train_with_vel.pkl" # 150 peds
 plot_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/orca/plots/orca/partial_traj/"
-metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/orca/metrics/orca/partial_traj/"
+# metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/orca/metrics/orca/partial_traj/"
 
 start_index = None  # start robot and ped from specific time index
 num_steps = None  # set goal after no. of time steps
@@ -32,7 +32,7 @@ robot_vel = None  # set preferred robot velocity
 ignore_collisions = True  # keep running robot even after collisions
 time_limit = 100000
 
-runs = get_remove_ped_dict("last_runs")
+runs = get_remove_ped_dict("new_runs")
 
 # distance_list=[]
 # ignore_peds=[]
@@ -43,25 +43,41 @@ runs = get_remove_ped_dict("last_runs")
 # new_runs = []
 # new_runs_dict = {}
 
+# def set_parameters(run_number):
+#     global start_index, num_steps, remove_ped, robot_vel
+#     key_name = list(runs.keys())[run_number]
+#     if 'full' not in key_name:
+#         value = runs[key_name]
+#         print(value)
+#         # if value[0] != 88:
+#         #     return False
+#         remove_ped = value[0]
+#         # new_runs.append(value)
+#         # new_runs_dict[key_name] = value
+#         start_index = value[1]
+#         num_steps = value[2]
+#         robot_vel = None  # set equals to remove ped avg. vel
+#         return True
+#     else:
+#         logging.warn("Ignoring dictionary key %s", key_name)
+#         return False
 def set_parameters(run_number):
     global start_index, num_steps, remove_ped, robot_vel
     key_name = list(runs.keys())[run_number]
-    if 'full' not in key_name:
-        value = runs[key_name]
-        print(value)
-        # if value[0] != 88:
-        #     return False
-        remove_ped = value[0]
-        # new_runs.append(value)
-        # new_runs_dict[key_name] = value
-        start_index = value[1]
-        num_steps = value[2]
-        robot_vel = None  # set equals to remove ped avg. vel
-        return True
-    else:
-        logging.warn("Ignoring dictionary key %s", key_name)
-        return False
+    # if 'full' not in key_name:
+    #     metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/sarl_social/metrics/sarl_social1/partial_traj/"
 
+    value = runs[key_name]
+    print(value)
+    # if value[0] != 88:
+    #     return False
+    remove_ped = value[0]
+    # new_runs.append(value)
+    # new_runs_dict[key_name] = value
+    start_index = value[1]
+    num_steps = value[2]
+    robot_vel = None  # set equals to remove ped avg. vel
+    return True
 
 def main():
     parser = argparse.ArgumentParser('Parse configuration file')
@@ -265,6 +281,14 @@ if __name__ == '__main__':
 
     for i in range(len(runs.keys())):
         if set_parameters(i):
+
+            key_name = list(runs.keys())[i]
+            print('key', key_name)
+            if 'full' not in key_name:
+                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/orca/metrics/orca/partial_traj/"
+            elif 'full' in key_name:
+                metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/orca/metrics/orca/full_traj/"
+            # # exit()
             main()
             # exit()
 
@@ -272,3 +296,4 @@ if __name__ == '__main__':
     # print(ignore_peds)
     # print(len(distance_list))
     # print(new_runs_dict)
+# metrics_folder = "/home/lambda-rl/Desktop/CrowdNav/results_eth/orca/metrics/orca/partial_traj/"
