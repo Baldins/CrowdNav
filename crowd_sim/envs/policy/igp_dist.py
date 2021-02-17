@@ -14,13 +14,26 @@ class Igp_Dist(Policy):
         :param num_agents: number of all agents (including the robot)
         :param robot_idx: index of the robot among all agents
         """
-        super().__init__()
+        super().__init__(self,num_agents)
         self.name = 'IGP-DIST'
         self.trainable = False
         self.multiagent_training = None
         self.kinematics = 'holonomic'
         self.max_speed = 1
         self.dt = 0.1
+        self.pred_len = 0
+
+        self.num_samples = 0
+        self.num_agents = num_agents
+
+        self.weights = np.zeros(num_agents)
+        self.gp_pred_x = [0. for _ in range(self.num_agents)]
+        self.gp_pred_x_cov = [0. for _ in range(self.num_agents)]
+        self.gp_pred_y = [0. for _ in range(self.num_agents)]
+        self.gp_pred_y_cov = [0. for _ in range(self.num_agents)]
+        self.samples_x = [0. for _ in range(self.num_agents)]
+        self.samples_y = [0. for _ in range(self.num_agents)]
+
         # specify parameters for igp computation
         self.a = 0.004  # a controls safety region
         self.h = 1.0  # h controls safety weight
@@ -61,15 +74,15 @@ class Igp_Dist(Policy):
 
         # we do igp-dist optimization here
         # the returned weights are not necessary
-        weights = igp.weight_compute(self.a, self.h, self.obj_thred, self.max_iter)
+        weights = weight_compute(self.a, self.h, self.obj_thred, self.max_iter)
         # extract current robot pose from collected observations
         robot_x = robot_state.px
         robot_y = robot_state.py
 
         # select optimal sample trajectory as reference for robot navigation
-        opt_idx = np.argmax(self.weights[self.robot_idx])
-        opt_robot_x = self.samples_x[self.robot_idx * self.num_samples + opt_idx][0]
-        opt_robot_y = self.samples_y[self.robot_idx * self.num_samples + opt_idx][0]
+        opt_idx = np.argmax(weights)
+        opt_robot_x = self.samples_x[self.num_samples + opt_idx][0]
+        opt_robot_y = self.samples_y[self.num_samples + opt_idx][0]
 
         # generate velocity command
         vel_x = (opt_robot_x - robot_x) / self.dt
