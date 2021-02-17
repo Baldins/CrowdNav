@@ -1,9 +1,13 @@
 import numpy as np
-from igp import igp
-from crowd_sim.env.utils.igp_dist_utils import compute
+from scipy.stats import multivariate_normal as mvn
+import george
+from copy import copy
+
+from crowd_sim.envs.utils.igp_dist_utils import compute
 from crowd_sim.envs.policy.policy import Policy
 from crowd_sim.envs.utils.action import ActionXY
 
+from crowd_sim.envs.policy.igp_fun import *
 
 class Igp_Dist(Policy):
     """igp-dist class"""
@@ -14,7 +18,7 @@ class Igp_Dist(Policy):
         :param num_agents: number of all agents (including the robot)
         :param robot_idx: index of the robot among all agents
         """
-        super().__init__(self,num_agents)
+        super().__init__()
         self.name = 'IGP-DIST'
         self.trainable = False
         self.multiagent_training = None
@@ -22,30 +26,18 @@ class Igp_Dist(Policy):
         self.max_speed = 1
         self.dt = 0.1
         self.pred_len = 0
-
-        self.num_samples = 0
-        self.num_agents = num_agents
-
-        self.weights = np.zeros(num_agents)
-        self.gp_pred_x = [0. for _ in range(self.num_agents)]
-        self.gp_pred_x_cov = [0. for _ in range(self.num_agents)]
-        self.gp_pred_y = [0. for _ in range(self.num_agents)]
-        self.gp_pred_y_cov = [0. for _ in range(self.num_agents)]
-        self.samples_x = [0. for _ in range(self.num_agents)]
-        self.samples_y = [0. for _ in range(self.num_agents)]
-
-        # specify parameters for igp computation
-        self.a = 0.004  # a controls safety region
-        self.h = 1.0  # h controls safety weight
-        self.obj_thred = 0.001  # terminal condition for optimization
-        self.max_iter = 150  # maximal number of iterations allowed
-        self.sim = None
+        self.num_samples = 500
+        self.obsv_xt = []
+        self.obsv_yt = []
+        self.obsv_len = 2
 
     def configure(self, config):
         return
 
     def set_phase(self, phase):
         return
+
+
 
     def weight_compute(self, a, h, obj_thred, max_iter):
         """
@@ -70,19 +62,29 @@ class Igp_Dist(Policy):
         """
 
         robot_state = state.self_state
-        num_agents = len(state.human_states)
-
-        # we do igp-dist optimization here
-        # the returned weights are not necessary
-        weights = weight_compute(self.a, self.h, self.obj_thred, self.max_iter)
-        # extract current robot pose from collected observations
         robot_x = robot_state.px
         robot_y = robot_state.py
 
+        humans_state = state.human_states
+        num_agents = len(state.human_states)
+
+        # add the observations
+        obsv_x, obsv_y = add_observation(humans_state.px, humans_state.py):
+
+
+        # do gp regression here, this generate initial preference distributions of each agent
+        # the returned "pred_len" is not necessary
+        pred_len = gp_predict(robot_state.gx, robot_state.gy, obsv_len=self.obsv_len, obsv_err_magnitude=0.01,
+                                  vel=0.028, dt=self.dt, cov_thred_x=1e-04, cov_thred_y=1e-04)
+
+        samples_x, samples_y = gp_sampling(num_samples=self.num_samples)
+
+        weights = weight_compute(self.a, self.h, self.obj_thred, self.max_iter)
+
         # select optimal sample trajectory as reference for robot navigation
         opt_idx = np.argmax(weights)
-        opt_robot_x = self.samples_x[self.num_samples + opt_idx][0]
-        opt_robot_y = self.samples_y[self.num_samples + opt_idx][0]
+        opt_robot_x = samples_x[self.num_samples + opt_idx][0]
+        opt_robot_y = samples_y[self.num_samples + opt_idx][0]
 
         # generate velocity command
         vel_x = (opt_robot_x - robot_x) / self.dt
