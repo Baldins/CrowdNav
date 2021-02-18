@@ -27,9 +27,29 @@ class Igp_Dist(Policy):
         self.dt = 0.1
         self.pred_len = 0
         self.num_samples = 500
-        self.obsv_xt = []
-        self.obsv_yt = []
+        self.obsv_x = []
+        self.obsv_y = []
         self.obsv_len = 2
+        self.num_agents = 4
+        self.cov_thred_x = 1e-04
+        self.cov_thred_y = 1e-04
+        self.obsv_err_magnitude = 0.01
+        self.a = 0.004  # a controls safety region
+        self.h = 1.0  # h controls safety weight
+        self.obj_thred = 0.001  # terminal condition for optimization
+        self.max_iter = 150  # maximal number of iterations allowed
+
+
+        # initialize gp kernels
+        k1 = george.kernels.LinearKernel(np.exp(2 * 2.8770), order=1)
+        k2 = 2.0 * george.kernels.Matern52Kernel(5.0)
+        hyper_x = np.array([0.2925377, 9.81793274, 8.20649053])
+        hyper_y = np.array([11.0121243, 10.98684898, 8.41968977])
+        self.gp_x = [george.GP(k1 + k2, fit_white_noise=True) for _ in range(self.num_agents)]
+        self.gp_y = [george.GP(k1 + k2, fit_white_noise=True) for _ in range(self.num_agents)]
+        for i in range(self.num_agents):
+            self.gp_x[i].set_parameter_vector(hyper_x)
+            self.gp_y[i].set_parameter_vector(hyper_y)
 
     def configure(self, config):
         return
@@ -37,54 +57,34 @@ class Igp_Dist(Policy):
     def set_phase(self, phase):
         return
 
-
-
-    def weight_compute(self, a, h, obj_thred, max_iter):
-        """
-        core of igp computation, compute all samples' weights
-        :param a: safety region parameter
-        :param h: safety magnitude parameter
-        :param obj_thred: terminal condition for iterations
-        :param max_iter: maximal number of iterations allowed
-        :return: optimized weights
-        """
-        samples_x = self.samples_x.copy()
-        samples_y = self.samples_y.copy()
-        weights = compute(samples_x, samples_y, self.human_num, self.num_samples, self.pred_len,
-                          a, h, obj_thred, max_iter)
-        self.weights = weights.copy()
-
     def predict(self, state):
         """
         generate velocity command for robot
         :param dt: interval of simulation step
         :return: velocity command
         """
-
         robot_state = state.self_state
         robot_x = robot_state.px
         robot_y = robot_state.py
 
-        humans_state = state.human_states
-        num_agents = len(state.human_states)
+        self.num_agents = len(state.human_states)
 
-        # add the observations
-        obsv_x, obsv_y = add_observation(humans_state.px, humans_state.py):
+        for i, human in enumerate(state.human_states):
+            self.obsv_x.append(human.px)
+            self.obsv_y.append(human.py)
+            idx = i
+        ## add observation
+        self.obsv_x.append(robot_x)
+        self.obsv_y.append(robot_y)
+        robot_idx = idx + 1
 
 
-        # do gp regression here, this generate initial preference distributions of each agent
-        # the returned "pred_len" is not necessary
-        pred_len = gp_predict(robot_state.gx, robot_state.gy, obsv_len=self.obsv_len, obsv_err_magnitude=0.01,
-                                  vel=0.028, dt=self.dt, cov_thred_x=1e-04, cov_thred_y=1e-04)
+        vel = robot_state.v_pref
 
-        samples_x, samples_y = gp_sampling(num_samples=self.num_samples)
-
-        weights = weight_compute(self.a, self.h, self.obj_thred, self.max_iter)
-
-        # select optimal sample trajectory as reference for robot navigation
-        opt_idx = np.argmax(weights)
-        opt_robot_x = samples_x[self.num_samples + opt_idx][0]
-        opt_robot_y = samples_y[self.num_samples + opt_idx][0]
+        opt_robot_x, opt_robot_y = igp(state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples, self.num_agents,
+                                        self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
+                                        self.obsv_len, self.obsv_err_magnitude, self.cov_thred_x, self.cov_thred_y,
+                                        self.gp_x, self.gp_y)
 
         # generate velocity command
         vel_x = (opt_robot_x - robot_x) / self.dt
@@ -107,3 +107,4 @@ class Igp_Dist(Policy):
             traj_y[i] = self.samples_y[i * self.num_samples + opt_idx].copy()
 
         return traj_x, traj_y
+
