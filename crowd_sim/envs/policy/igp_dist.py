@@ -26,7 +26,7 @@ class Igp_Dist(Policy):
         self.max_speed = 1
         self.dt = 0.1
         self.pred_len = 0
-        self.num_samples = 500
+        self.num_samples = 50
         self.obsv_xt = []
         self.obsv_yt = []
         self.obsv_x = []
