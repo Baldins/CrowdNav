@@ -15,7 +15,7 @@ def add_observation(obsv_xt, obsv_yt, obsv_x, obsv_y):
     obsv_y.append(obsv_yt)
     return obsv_x, obsv_y
 
-def gp_predict(state,robot_state, vel, dt,
+def gp_predict(num_agents, robot_state, vel, dt,
                obsv_len, obsv_err_magnitude,gp_x,gp_y,
                cov_thred_x, cov_thred_y, obsv_x, obsv_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov):
     """
@@ -43,19 +43,17 @@ def gp_predict(state,robot_state, vel, dt,
     obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
     obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
 
-    for i, human_state in enumerate(state.human_states):
+    for i in range(num_agents):
 
-    # for i in range(num_agents):
+        # for i in range(num_agents):
         # here we do gp regression on x coordinate
         gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
 
         obsv_xn = []
-        print("ooo", obsv_x)
         for j in range(obsv_len):
             obsv_xn.append(obsv_x[-obsv_len + j][i])
         obsv_xn.append(obsv_x[0][i])
-        print("pred", pred_t)
-        print("gaussian", obsv_xn)
+
         pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
         scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len)
         pred_x_cov /= scale_x
@@ -84,12 +82,10 @@ def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_
     :param include_mean: whether include gp mean as a sample
     :return: generated samples
     """
-    print("pred_len", pred_len)
     samples_x = np.zeros((num_agents * num_samples, pred_len), dtype=np.float32)
     samples_y = np.zeros((num_agents * num_samples, pred_len), dtype=np.float32)
     for i in range(num_agents):
         if pred_len > 1:
-            print("gp", gp_pred_x[i])
             samples_x[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_x[i],
                                                                         cov=gp_pred_x_cov[i], size=num_samples)
             samples_y[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_y[i],
@@ -121,7 +117,6 @@ def weight_compute(a, h, obj_thred, max_iter, samples_x, samples_y, human_num, n
     """
     # samples_x = samples_x
     # samples_y = samples_y
-    print("len", len(samples_x))
     weights = compute(samples_x, samples_y, human_num, num_samples, pred_len,
                       a, h, obj_thred, max_iter)
     return weights
@@ -133,7 +128,6 @@ def actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt=1):
     :return: velocity command
     """
     # select optimal sample trajectory as reference for robot navigation
-    print(weights)
     opt_idx = np.argmax(weights[robot_idx])
     opt_robot_x = samples_x[robot_idx * num_samples + opt_idx][0]
     opt_robot_y = samples_y[robot_idx * num_samples + opt_idx][0]
@@ -146,8 +140,6 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents,
     robot_state = state.self_state
     goals_x = []
     goals_y = []
-
-    print(obsv_x)
     for i, human in enumerate(state.human_states):
         goals_x.append(-obsv_x[0][i])
         goals_y.append(-obsv_y[0][i])
@@ -157,7 +149,7 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents,
 
 
     ## predict
-    gp_pred_x, gp_pred_y, pred_x_cov, pred_y_cov, pred_len = gp_predict(state, robot_state, vel, dt,
+    gp_pred_x, gp_pred_y, pred_x_cov, pred_y_cov, pred_len = gp_predict(num_agents, robot_state, vel, dt,
                obsv_len, obsv_err_magnitude, gp_x, gp_y,
                cov_thred_x, cov_thred_y, obsv_x, obsv_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov)
 
