@@ -115,8 +115,7 @@ def weight_compute(a, h, obj_thred, max_iter, samples_x, samples_y, human_num, n
     :param max_iter: maximal number of iterations allowed
     :return: optimized weights
     """
-    # samples_x = samples_x
-    # samples_y = samples_y
+
     weights = compute(samples_x, samples_y, human_num, num_samples, pred_len,
                       a, h, obj_thred, max_iter)
     return weights
