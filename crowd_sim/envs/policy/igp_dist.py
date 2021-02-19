@@ -23,10 +23,10 @@ class Igp_Dist(Policy):
         self.trainable = False
         self.multiagent_training = None
         self.kinematics = 'holonomic'
-        self.max_speed = 1
-        self.dt = 0.1
+        self.max_speed = 0.01
+        self.dt = 1
         self.pred_len = 0
-        self.num_samples = 50
+        self.num_samples = 500
         self.obsv_xt = []
         self.obsv_yt = []
         self.obsv_x = []
@@ -95,7 +95,8 @@ class Igp_Dist(Policy):
 
 
 
-        vel = robot_state.v_pref
+        #vel = robot_state.v_pref
+        vel = 0.1
         print(self.count)
         if self.count > self.obsv_len:
             print("IGP")
