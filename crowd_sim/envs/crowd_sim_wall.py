@@ -668,9 +668,9 @@ class CrowdSim_wall(gym.Env):
             anim.running = True
 
             #if output_file is not None:
-            #     ffmpeg_writer = animation.writers['ffmpeg']
-            #     writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-            #     anim.save("/home/lambda-rl/Desktop/wall.mp4", writer=writer)
+            ffmpeg_writer = animation.writers['ffmpeg']
+            writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
+            anim.save("/home/lambda-rl/Desktop/wall.mp4", writer=writer)
             # else:
             plt.show()
         else:

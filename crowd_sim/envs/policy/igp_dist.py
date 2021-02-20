@@ -23,22 +23,22 @@ class Igp_Dist(Policy):
         self.trainable = False
         self.multiagent_training = None
         self.kinematics = 'holonomic'
-        self.max_speed = 0.01
+        self.max_speed = 0.1
         self.dt = 1
         self.pred_len = 0
-        self.num_samples = 500
+        self.num_samples = 200
         self.obsv_xt = []
         self.obsv_yt = []
         self.obsv_x = []
         self.obsv_y = []
-        self.obsv_len = 2
+        self.obsv_len = 1
         self.count = 0
-        self.num_agents = 4
-        self.cov_thred_x = 1e-04
-        self.cov_thred_y = 1e-04
-        self.obsv_err_magnitude = 0.01
-        self.a = 0.004  # a controls safety region
-        self.h = 1.0  # h controls safety weight
+        self.num_agents = 8
+        self.cov_thred_x = 0.05
+        self.cov_thred_y = 0.05
+        self.obsv_err_magnitude = 0.0001
+        self.a = 0.1  # a controls safety region
+        self.h = 10.0  # h controls safety weight
         self.obj_thred = 0.001  # terminal condition for optimization
         self.max_iter = 150  # maximal number of iterations allowed
         self.weights = np.zeros(self.num_agents)
@@ -95,8 +95,8 @@ class Igp_Dist(Policy):
 
 
 
-        #vel = robot_state.v_pref
-        vel = 0.1
+        # vel = robot_state.v_pref
+        vel = 1
         print(self.count)
         if self.count > self.obsv_len:
             print("IGP")
@@ -104,7 +104,7 @@ class Igp_Dist(Policy):
                                             self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
                                             self.obsv_len, self.obsv_err_magnitude, self.cov_thred_x, self.cov_thred_y,
                                             self.gp_x, self.gp_y, self.gp_pred_x, self.gp_pred_x_cov, self.gp_pred_y, self.gp_pred_y_cov, self.samples_x, self.samples_y, self.weights)
-
+            print("opt robot" ,opt_robot_y)
             # generate velocity command
             vel_x = (opt_robot_x - robot_x) / self.dt
             vel_y = (opt_robot_y - robot_y) / self.dt

@@ -33,9 +33,14 @@ def gp_predict(num_agents, robot_state, vel, dt,
     # extract current robot pose from collected observations
     curr_robot_x = robot_state.px
     curr_robot_y = robot_state.py
+
+    print("curr_robot_y", np.abs(curr_robot_y))
+
     # use the distance between current pose and navigation goal (of the robot) to determine length of prediction
     dist = np.sqrt((robot_state.gx - curr_robot_x) ** 2 + (robot_state.gy - curr_robot_y) ** 2)
     pred_len = int(dist / (vel * dt)) + 1
+
+    print("dist", dist)
 
 
     # indices/labels for gp regression
@@ -52,7 +57,7 @@ def gp_predict(num_agents, robot_state, vel, dt,
         obsv_xn = []
         for j in range(obsv_len):
             obsv_xn.append(obsv_x[-obsv_len + j][i])
-        obsv_xn.append(obsv_x[0][i])
+        obsv_xn.append(-obsv_x[0][i])
 
         pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
         scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len)
@@ -65,7 +70,7 @@ def gp_predict(num_agents, robot_state, vel, dt,
         obsv_yn = []
         for j in range(obsv_len):
             obsv_yn.append(obsv_y[-obsv_len + j][i])
-        obsv_yn.append(obsv_y[0][i])
+        obsv_yn.append(-obsv_y[0][i])
         pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
         scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len)
         pred_y_cov /= scale_y
@@ -103,6 +108,8 @@ def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_
             samples_x[i * num_samples] = gp_pred_x[i]
             samples_y[i * num_samples] = gp_pred_y[i]
 
+    # print("sample_x", samples_x)
+    # print("sample_y", samples_y)
 
     return samples_x, samples_y
 

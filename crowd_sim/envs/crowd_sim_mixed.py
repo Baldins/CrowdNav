@@ -683,15 +683,15 @@ class CrowdSim_mixed(gym.Env):
                 else:
                     anim.event_source.start()
 
-            # fig.canvas.mpl_connect('key_press_event', on_click)
-            # anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
-            # anim.running = True
+            fig.canvas.mpl_connect('key_press_event', on_click)
+            anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
+            anim.running = True
 
-            # if output_file is not None:
-            #     ffmpeg_writer = animation.writers['ffmpeg']
-            #     writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-            #     anim.save("/home/fbaldini/Desktop/ssp_w_h_orca_5.mp4", writer=writer)
+            #if output_file is not None:
+            ffmpeg_writer = animation.writers['ffmpeg']
+            writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
+            anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
             # else:
-            #     plt.show()
+            plt.show()
         else:
             raise NotImplementedError

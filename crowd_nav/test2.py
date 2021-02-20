@@ -198,6 +198,12 @@ def main():
 
         robot_policy = args.policy
         trained_env = args.trained_env
+
+        if robot_policy == 'igp_dist':
+            method_dir = 'igp_dist/'
+            if not os.path.exists(main+maindir + method_dir):
+                os.mkdir(main+maindir + method_dir)
+
         if robot_policy == 'ssp':
             method_dir = 'ssp/'
             if not os.path.exists(main+maindir + method_dir):
