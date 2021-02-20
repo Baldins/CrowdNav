@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--circle', default=False, action='store_true')
     parser.add_argument('--video_file', type=str, default=False)
     parser.add_argument('--traj', default=False, action='store_true')
-    parser.add_argument('--human_policy',  type=str, default='orca')
+    parser.add_argument('--human_policy',  type=str, default='socialforce')
     parser.add_argument('--trained_env',  type=str, default='socialforce')
     args = parser.parse_args()
 
