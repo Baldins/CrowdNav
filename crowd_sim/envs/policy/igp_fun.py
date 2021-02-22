@@ -15,7 +15,7 @@ def add_observation(obsv_xt, obsv_yt, obsv_x, obsv_y):
     obsv_y.append(obsv_yt)
     return obsv_x, obsv_y
 
-def gp_predict(num_agents, robot_state, vel, dt,
+def gp_predict(num_agents, robot_state, vel, dt,len_scale,
                obsv_len, obsv_err_magnitude,gp_x,gp_y,
                cov_thred_x, cov_thred_y, obsv_x, obsv_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov):
     """
@@ -34,13 +34,13 @@ def gp_predict(num_agents, robot_state, vel, dt,
     curr_robot_x = robot_state.px
     curr_robot_y = robot_state.py
 
-    print("curr_robot_y", np.abs(curr_robot_y))
+    print("curr_robot_y", curr_robot_y)
 
     # use the distance between current pose and navigation goal (of the robot) to determine length of prediction
     dist = np.sqrt((robot_state.gx - curr_robot_x) ** 2 + (robot_state.gy - curr_robot_y) ** 2)
     pred_len = int(dist / (vel * dt)) + 1
 
-    print("dist", dist)
+    print("pred_len", pred_len)
 
 
     # indices/labels for gp regression
@@ -60,7 +60,7 @@ def gp_predict(num_agents, robot_state, vel, dt,
         obsv_xn.append(-obsv_x[0][i])
 
         pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
-        scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len)
+        scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len/ len_scale)
         pred_x_cov /= scale_x
         gp_pred_x[i] = copy(pred_x)
         gp_pred_x_cov[i] = copy(pred_x_cov)
@@ -72,7 +72,7 @@ def gp_predict(num_agents, robot_state, vel, dt,
             obsv_yn.append(obsv_y[-obsv_len + j][i])
         obsv_yn.append(-obsv_y[0][i])
         pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
-        scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len)
+        scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len/ len_scale)
         pred_y_cov /= scale_y
         gp_pred_y[i] = copy(pred_y)
         gp_pred_y_cov[i] = copy(pred_y_cov)
@@ -140,7 +140,21 @@ def actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt=1):
 
     return opt_robot_x, opt_robot_y
 
-def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents,
+def get_opt_traj(num_agents,num_samples, pred_len, samples_x, samples_y, weights):
+    """
+    get joint optimal trajectories of all agents
+    :return: joint optimal trajectories
+    """
+    traj_x = np.zeros((num_agents, pred_len))
+    traj_y = np.zeros((num_agents, pred_len))
+    for i in range(num_agents):
+        opt_idx = np.argmax(weights[i])
+        traj_x[i] = samples_x[i * num_samples + opt_idx]
+        traj_y[i] = samples_y[i * num_samples + opt_idx]
+    # print("traj", traj_x)
+    return traj_x, traj_y
+
+def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents,len_scale,
         a, h, obj_thred, max_iter, vel, dt, obsv_len, obsv_err_magnitude, cov_thred_x, cov_thred_y, gp_x, gp_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov, samples_x, samples_y, weights ):
 
     robot_state = state.self_state
@@ -155,7 +169,7 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents,
 
 
     ## predict
-    gp_pred_x, gp_pred_y, pred_x_cov, pred_y_cov, pred_len = gp_predict(num_agents, robot_state, vel, dt,
+    gp_pred_x, gp_pred_y, pred_x_cov, pred_y_cov, pred_len = gp_predict(num_agents, robot_state, vel, dt,len_scale,
                obsv_len, obsv_err_magnitude, gp_x, gp_y,
                cov_thred_x, cov_thred_y, obsv_x, obsv_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov)
 
@@ -168,5 +182,5 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents,
     ## actuate
 
     opt_robot_x, opt_robot_y = actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt)
-
-    return opt_robot_x, opt_robot_y
+    traj_x, traj_y = get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weights)
+    return opt_robot_x, opt_robot_y, traj_x, traj_y
