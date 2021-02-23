@@ -86,7 +86,7 @@ def gp_predict(state, robot_idx, num_agents, robot_state, vel, dt, len_scale,
             gp_pred_y_cov[i] = copy(pred_y_cov)
         else: # for pedestrian we condition on predicted goal
             # indices/labels for gp regression
-            for k, human in enumerate(state.human_states):
+            for human in state.human_states:
                 pred_t = np.arange(pred_len) + obsv_len
                 obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
                 obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude

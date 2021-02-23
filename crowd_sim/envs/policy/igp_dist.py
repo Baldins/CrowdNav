@@ -33,10 +33,10 @@ class Igp_Dist(Policy):
         self.obsv_y = []
         self.obsv_len = 2
         self.count = 0
-        self.vel = 0.1
+        self.vel = 0.3
         self.collision_thresh = 0.6
-        self.len_scale = 2
-        self.num_agents = 8
+        self.len_scale = 7
+        self.num_agents = 22
         self.cov_thred_x = 0.01
         self.cov_thred_y = 0.01
         self.obsv_err_magnitude = 0.001
@@ -113,8 +113,8 @@ class Igp_Dist(Policy):
 
             close_obst = []
             close_obst2 = []
-            self.trajs_x = traj_x
-            self.trajs_y = traj_y
+            self.trajs_x.append(traj_x)
+            self.trajs_y.append(traj_y)
 
             # print("self_traj", self.trajs)
             #
