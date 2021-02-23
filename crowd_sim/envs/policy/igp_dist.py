@@ -36,11 +36,11 @@ class Igp_Dist(Policy):
         self.obsv_len = 2
         self.count = 0
         self.vel = 0.6
-        self.collision_thresh = 0.5
+        self.collision_thresh = 0.3
         self.len_scale = 5
         self.num_agents = 8
-        self.cov_thred_x = 0.02
-        self.cov_thred_y = 0.02
+        self.cov_thred_x = 0.05
+        self.cov_thred_y = 0.05
         self.obsv_err_magnitude = 0.001
         self.a = 0.1  # a controls safety region
         self.h = 10.0  # h controls safety weight
@@ -161,15 +161,15 @@ class Igp_Dist(Policy):
 
 
                 theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                vel_x = 0.8* np.cos(theta) * robot_state.v_pref
-                vel_y = 0.8* np.sin(theta) * robot_state.v_pref
+                vel_x =  np.cos(theta) * robot_state.v_pref
+                vel_y =  np.sin(theta) * robot_state.v_pref
             else:
                 # vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
                 # vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
                 theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
 
-                vel_x = 0.000001 * np.cos(theta) * robot_state.v_pref
-                vel_y = 0.000001 * np.sin(theta) * robot_state.v_pref
+                vel_x = 0.5 * np.cos(theta) * robot_state.v_pref
+                vel_y = 0.5 * np.sin(theta) * robot_state.v_pref
 
             action = ActionXY(vel_x, vel_y)
         else:
@@ -184,6 +184,7 @@ class Igp_Dist(Policy):
         return action
 
     def get_traj(self):
+
         return self.trajs_x, self.trajs_y
 
     def get_opt_traj(self):

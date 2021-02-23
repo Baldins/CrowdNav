@@ -312,7 +312,7 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     samples_x, samples_y, samples_pdf = gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov,
                                                     gp_pred_y, gp_pred_y_cov, samples_x, samples_y,
                                                     include_mean=True)
-    print("sample_x", samples_x)
+    print("sample_x", samples_x[2])
     ## weight
     weights = weight_compute(a, h, obj_thred, max_iter, samples_x, samples_y, num_agents, num_samples, pred_len)
 
@@ -361,6 +361,6 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     plt.savefig(temp_dir + file_name)
 
     plt.legend()
-    plt.pause(1.0)
+    plt.pause(0.5)
 
     return opt_robot_x, opt_robot_y, traj_x, traj_y
