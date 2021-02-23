@@ -640,8 +640,19 @@ class CrowdSim_IGP(gym.Env):
 
 
 
+            agents_future_positions = [self.trajs_x, self.trajs_y]
+            # print("agents_future_positions", agents_future_positions[1][1])
+            agents_future_circles = []
 
-
+            for i in range(self.human_num):
+                circles = []
+                # print(agents_future_positions[0][i])
+                for j in range(len(agents_future_positions[0][0])):
+                    circle = plt.Circle((agents_future_positions[0][i][j], agents_future_positions[1][i][j]),
+                                        self.humans[0].radius / (1.7), fill=False, color=cmap(i))
+                    ax.add_artist(circle)
+                    circles.append(circle)
+                    agents_future_circles.append(circles)
 
             def update(frame_num):
                 nonlocal global_step
@@ -649,19 +660,7 @@ class CrowdSim_IGP(gym.Env):
                 global_step = frame_num
                 robot.center = robot_positions[frame_num]
 
-                agents_future_positions = [self.trajs_x, self.trajs_y]
-                # print("agents_future_positions", agents_future_positions[1][1])
-                agents_future_circles = []
 
-                for i in range(self.human_num):
-                    circles = []
-                    # print(agents_future_positions[0][i])
-                    for j in range(len(agents_future_positions[0][0])):
-                        circle = plt.Circle((agents_future_positions[0][i][j], agents_future_positions[1][i][j]),
-                                            self.humans[0].radius / (1.7), fill=False, color=cmap(i))
-                        ax.add_artist(circle)
-                        circles.append(circle)
-                        agents_future_circles.append(circles)
 
                 for i, human in enumerate(humans):
                     human.center = human_positions[frame_num][i]

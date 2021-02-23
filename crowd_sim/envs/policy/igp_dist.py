@@ -40,8 +40,8 @@ class Igp_Dist(Policy):
         self.cov_thred_x = 0.05
         self.cov_thred_y = 0.05
         self.obsv_err_magnitude = 0.001
-        self.a = 0.1 # a controls safety region
-        self.h = 5.0  # h controls safety weight
+        self.a = 0.5 # a controls safety region
+        self.h = 1.0  # h controls safety weight
         self.obj_thred = 0.001  # terminal condition for optimization
         self.max_iter = 500  # maximal number of iterations allowed
         self.weights = np.zeros(self.num_agents)
