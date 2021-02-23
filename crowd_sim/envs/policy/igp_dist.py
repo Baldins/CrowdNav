@@ -33,14 +33,14 @@ class Igp_Dist(Policy):
         self.obsv_y = []
         self.obsv_len = 2
         self.count = 0
-        self.vel = 0.5
+        self.vel = 0.1
         self.collision_thresh = 0.2
         self.len_scale = 5
         self.num_agents = 22
-        self.cov_thred_x = 0.05
-        self.cov_thred_y = 0.05
+        self.cov_thred_x = 0.01
+        self.cov_thred_y = 0.01
         self.obsv_err_magnitude = 0.001
-        self.a = 0.03 # a controls safety region
+        self.a = 0.1 # a controls safety region
         self.h = 1.0  # h controls safety weight
         self.obj_thred = 0.001  # terminal condition for optimization
         self.max_iter = 500  # maximal number of iterations allowed
@@ -144,8 +144,8 @@ class Igp_Dist(Policy):
                 # vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
                 theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
 
-                vel_x = 0.000001 * np.cos(theta) * vel
-                vel_y = 0.000001 * np.sin(theta) * vel
+                vel_x = 0.000001 * np.cos(theta) * robot_state.v_pref
+                vel_y = 0.000001 * np.sin(theta) * robot_state.v_pref
 
             action = ActionXY(vel_x, vel_y)
         else:

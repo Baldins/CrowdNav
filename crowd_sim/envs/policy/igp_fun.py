@@ -96,10 +96,10 @@ def gp_predict(robot_idx, num_agents, robot_state, vel, dt, len_scale,
     :return: length of the predicted trajectory
     """
     # initialization
-    # gp_pred_x = [0. for _ in range(num_agents)]
-    # gp_pred_x_cov = [0. for _ in range(num_agents)]
-    # gp_pred_y = [0. for _ in range(num_agents)]
-    # gp_pred_y_cov = [0. for _ in range(num_agents)]
+    gp_pred_x = [0. for _ in range(num_agents)]
+    gp_pred_x_cov = [0. for _ in range(num_agents)]
+    gp_pred_y = [0. for _ in range(num_agents)]
+    gp_pred_y_cov = [0. for _ in range(num_agents)]
 
     # extract current robot pose from collected observations
     curr_robot_x = robot_state.px
@@ -189,7 +189,8 @@ def gp_predict(robot_idx, num_agents, robot_state, vel, dt, len_scale,
 
     return gp_pred_x, gp_pred_y, gp_pred_x_cov, gp_pred_y_cov, pred_len
 
-def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov,samples_x, samples_y,
+def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov, samples_x,
+                samples_y,
                 include_mean=True):
     """
     generate samples from gp posteriors
@@ -197,29 +198,75 @@ def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_
     :param include_mean: whether include gp mean as a sample
     :return: generated samples
     """
-    samples_x = np.zeros((num_agents * num_samples, pred_len), dtype=np.float32)
-    samples_y = np.zeros((num_agents * num_samples, pred_len), dtype=np.float32)
+    time_seed = int(time.time() * 1000) % 1000
+    print("random seed: ", time_seed)
+    np.random.seed(time_seed)
+
+    if include_mean is True:
+        print("GP mean included as sample")
+    else:
+        print("GP mean NOT included as sample")
+    samples_x = np.zeros((num_agents * num_samples, pred_len))
+    samples_y = np.zeros((num_agents * num_samples, pred_len))
+    pdf_x = np.zeros((num_agents, num_samples), dtype=np.float128)
+    pdf_y = np.zeros((num_agents, num_samples), dtype=np.float128)
     for i in range(num_agents):
         if pred_len > 1:
-            samples_x[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_x[i],
-                                                                        cov=gp_pred_x_cov[i], size=num_samples)
-            samples_y[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_y[i],
-                                                                        cov=gp_pred_y_cov[i], size=num_samples)
+            rv_x = mvn(mean=gp_pred_x[i], cov=gp_pred_x_cov[i])
+            samples_x[i * num_samples: (i + 1) * num_samples] = rv_x.rvs(size=num_samples).copy()
+            rv_y = mvn(mean=gp_pred_y[i], cov=gp_pred_y_cov[i])
+            samples_y[i * num_samples: (i + 1) * num_samples] = rv_y.rvs(size=num_samples).copy()
         else:
-            samples_x[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_x[i],
-                                                                        cov=gp_pred_x_cov[i],
-                                                                        size=num_samples)[:, None]
-            samples_y[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_y[i],
-                                                                        cov=gp_pred_y_cov[i],
-                                                                        size=num_samples)[:, None]
-    if include_mean:
-        # if include gp mean as sample, replace the first sample as gp mean
-        for i in range(num_agents):
+            rv_x = mvn(mean=gp_pred_x[i], cov=gp_pred_x_cov[i])
+            samples_x[i * num_samples: (i + 1) * num_samples] = rv_x.rvs(size=num_samples).copy()[:, None]
+            rv_y = mvn(mean=gp_pred_y[i], cov=gp_pred_y_cov[i])
+            samples_y[i * num_samples: (i + 1) * num_samples] = rv_y.rvs(size=num_samples).copy()[:, None]
+        if include_mean:
+            # if include gp mean as sample, replace the first sample as gp mean
             samples_x[i * num_samples] = gp_pred_x[i]
             samples_y[i * num_samples] = gp_pred_y[i]
+        pdf_x[i] = rv_x.pdf(samples_x[i * num_samples: (i + 1) * num_samples])
+        pdf_y[i] = rv_y.pdf(samples_y[i * num_samples: (i + 1) * num_samples])
+    scale = np.max(pdf_x[0])
+    pdf_x /= scale
+    pdf_y /= scale
+    # print("sample_x", samples_x)
+    # print("sample_y", samples_y)
 
+    samples_pdf = pdf_x * pdf_y
+    return samples_x, samples_y, samples_pdf
 
-    return samples_x, samples_y
+# def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov,samples_x, samples_y,
+#                 include_mean=True):
+#     """
+#     generate samples from gp posteriors
+#     :param num_samples: number of samples for each agent
+#     :param include_mean: whether include gp mean as a sample
+#     :return: generated samples
+#     """
+#     samples_x = np.zeros((num_agents * num_samples, pred_len), dtype=np.float32)
+#     samples_y = np.zeros((num_agents * num_samples, pred_len), dtype=np.float32)
+#     for i in range(num_agents):
+#         if pred_len > 1:
+#             samples_x[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_x[i],
+#                                                                         cov=gp_pred_x_cov[i], size=num_samples)
+#             samples_y[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_y[i],
+#                                                                         cov=gp_pred_y_cov[i], size=num_samples)
+#         else:
+#             samples_x[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_x[i],
+#                                                                         cov=gp_pred_x_cov[i],
+#                                                                         size=num_samples)[:, None]
+#             samples_y[i * num_samples: (i + 1) * num_samples] = mvn.rvs(mean=gp_pred_y[i],
+#                                                                         cov=gp_pred_y_cov[i],
+#                                                                         size=num_samples)[:, None]
+#     if include_mean:
+#         # if include gp mean as sample, replace the first sample as gp mean
+#         for i in range(num_agents):
+#             samples_x[i * num_samples] = gp_pred_x[i]
+#             samples_y[i * num_samples] = gp_pred_y[i]
+#
+#
+#     return samples_x, samples_y
 
 def weight_compute(a, h, obj_thred, max_iter, samples_x, samples_y, human_num, num_samples, pred_len):
     """
