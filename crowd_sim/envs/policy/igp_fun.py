@@ -286,7 +286,7 @@ def get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weight
     return traj_x, traj_y
 
 
-def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
+def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
         a, h, obj_thred, max_iter, vel, dt, obsv_len, obsv_err_magnitude, cov_thred_x, cov_thred_y, gp_x, gp_y,
         gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov, samples_x, samples_y, weights, include_pdf=False, actuate_index=0):
     robot_state = state.self_state
@@ -329,19 +329,19 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
     # maplotlib initialization
 
 
-    fig, ax = plt.subplots(1, 1, figsize=(8., 8.), tight_layout=True)
+    ax.cla()
     ax.set_xlim(-6, 6)
     ax.set_ylim(-6, 6)
     ax.set_xlabel('x(m)', fontsize=16)
     ax.set_ylabel('y(m)', fontsize=16)
     for i in range(num_agents):
         ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"agent{i}")
-        ax.scatter(samples_x[i], samples_y[i], linewidth=1)
+        ax.scatter(samples_x[i * num_samples], samples_y[i * num_samples], linewidth=1)
         for human in state.human_states:
             circle = plt.Circle((human.px, human.py), 0.3, color='r')
             ax.add_patch(circle)
     robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color='k', label='robot')
     ax.add_patch(robot)
     plt.legend()
-    plt.show()
+    plt.pause(1.0)
     return opt_robot_x, opt_robot_y, traj_x, traj_y

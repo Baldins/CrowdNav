@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import multivariate_normal as mvn
 import george
 from copy import copy
+import matplotlib.pyplot as plt
 import math
 from crowd_sim.envs.utils.igp_dist_utils import compute
 from crowd_sim.envs.policy.policy import Policy
@@ -26,7 +27,7 @@ class Igp_Dist(Policy):
         self.max_speed = 1
         self.dt = 1
         self.pred_len = 0
-        self.num_samples = 500
+        self.num_samples = 100
         self.obsv_xt = []
         self.obsv_yt = []
         self.obsv_x = []
@@ -70,6 +71,8 @@ class Igp_Dist(Policy):
         self.trajs_x = []
         self.trajs_y = []
 
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(8., 8.))
+
     def configure(self, config):
         return
 
@@ -112,7 +115,7 @@ class Igp_Dist(Policy):
         print(self.count)
         if self.count > self.obsv_len:
             print("IGP, robot_idx: ", robot_idx)
-            opt_robot_x, opt_robot_y, traj_x, traj_y = igp(state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples,
+            opt_robot_x, opt_robot_y, traj_x, traj_y = igp(self.fig, self.ax, state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples,
                                                            self.num_agents, self.len_scale,
                                                            self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
                                                            self.obsv_len, self.obsv_err_magnitude, self.cov_thred_x,
