@@ -14,10 +14,75 @@ def add_observation(obsv_xt, obsv_yt, obsv_x, obsv_y):
     obsv_x.append(obsv_xt)
     obsv_y.append(obsv_yt)
     return obsv_x, obsv_y
+#
+# def gp_predict(num_agents, robot_state, vel, dt,len_scale,
+#                obsv_len, obsv_err_magnitude,gp_x,gp_y,
+#                cov_thred_x, cov_thred_y, obsv_x, obsv_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov):
+#     """
+#     gp regression for all agents' trajectories
+#     :param goals_x: a list/array of all agents' navigation goals' x positions
+#     :param goals_y: a list/array of all agents' navigation goals' y positions
+#     :param vel: desired velocity of the robot
+#     :param dt: time interval of simulation
+#     :param obsv_len: length of the observations of all agents to be used for regression
+#     :param obsv_err_magnitude: noise magnitude of observations (assume x and y positions have the same magnitude)
+#     :param cov_thred_x: constraint on the regression uncertainty on x position
+#     :param cov_thred_y: constraint on the regression uncertainty on y position
+#     :return: length of the predicted trajectory
+#     """
+#     # extract current robot pose from collected observations
+#     curr_robot_x = robot_state.px
+#     curr_robot_y = robot_state.py
+#
+#     print("curr_robot_y", curr_robot_y)
+#
+#     # use the distance between current pose and navigation goal (of the robot) to determine length of prediction
+#     dist = np.sqrt((robot_state.gx - curr_robot_x) ** 2 + (robot_state.gy - curr_robot_y) ** 2)
+#     pred_len = int(dist / (vel * dt)) + 1
+#
+#     print("pred_len", pred_len)
+#
+#
+#     # indices/labels for gp regression
+#     pred_t = np.arange(pred_len) + obsv_len
+#     obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
+#     obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
+#
+#     for i in range(num_agents):
+#
+#         # for i in range(num_agents):
+#         # here we do gp regression on x coordinate
+#         gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
+#
+#         obsv_xn = []
+#         for j in range(obsv_len):
+#             obsv_xn.append(obsv_x[-obsv_len + j][i])
+#         obsv_xn.append(-obsv_x[0][i])
+#
+#         pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
+#         scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len/ len_scale)
+#         pred_x_cov /= scale_x
+#         gp_pred_x[i] = copy(pred_x)
+#         gp_pred_x_cov[i] = copy(pred_x_cov)
+#
+#         # here we do gp regression on y coordinate
+#         gp_y[i].compute(obsv_t, obsv_err)
+#         obsv_yn = []
+#         for j in range(obsv_len):
+#             obsv_yn.append(obsv_y[-obsv_len + j][i])
+#         obsv_yn.append(-obsv_y[0][i])
+#         pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
+#         scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len/ len_scale)
+#         pred_y_cov /= scale_y
+#         gp_pred_y[i] = copy(pred_y)
+#         gp_pred_y_cov[i] = copy(pred_y_cov)
+#
+#     return gp_pred_x, gp_pred_y, gp_pred_x_cov, gp_pred_y_cov, pred_len
 
-def gp_predict(num_agents, robot_state, vel, dt,len_scale,
-               obsv_len, obsv_err_magnitude,gp_x,gp_y,
-               cov_thred_x, cov_thred_y, obsv_x, obsv_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov):
+
+def gp_predict(robot_idx, num_agents, robot_state, vel, dt, len_scale,
+               obsv_len, obsv_err_magnitude, gp_x, gp_y,
+               cov_thred_x, cov_thred_y, obsv_x, obsv_y, gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov):
     """
     gp regression for all agents' trajectories
     :param goals_x: a list/array of all agents' navigation goals' x positions
@@ -30,11 +95,17 @@ def gp_predict(num_agents, robot_state, vel, dt,len_scale,
     :param cov_thred_y: constraint on the regression uncertainty on y position
     :return: length of the predicted trajectory
     """
+    # initialization
+    # gp_pred_x = [0. for _ in range(num_agents)]
+    # gp_pred_x_cov = [0. for _ in range(num_agents)]
+    # gp_pred_y = [0. for _ in range(num_agents)]
+    # gp_pred_y_cov = [0. for _ in range(num_agents)]
+
     # extract current robot pose from collected observations
     curr_robot_x = robot_state.px
     curr_robot_y = robot_state.py
 
-    print("curr_robot_y", curr_robot_y)
+    print("curr_robot: ", curr_robot_x, curr_robot_y)
 
     # use the distance between current pose and navigation goal (of the robot) to determine length of prediction
     dist = np.sqrt((robot_state.gx - curr_robot_x) ** 2 + (robot_state.gy - curr_robot_y) ** 2)
@@ -42,40 +113,79 @@ def gp_predict(num_agents, robot_state, vel, dt,len_scale,
 
     print("pred_len", pred_len)
 
-
-    # indices/labels for gp regression
-    pred_t = np.arange(pred_len) + obsv_len
-    obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
-    obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
-
     for i in range(num_agents):
+        if i == robot_idx: # for robot, we condition on real goal
+            # indices/labels for gp regression
+            pred_t = np.arange(pred_len) + obsv_len
+            obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
+            obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
 
-        # for i in range(num_agents):
-        # here we do gp regression on x coordinate
-        gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
+            # here we do gp regression on x coordinate
+            gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
 
-        obsv_xn = []
-        for j in range(obsv_len):
-            obsv_xn.append(obsv_x[-obsv_len + j][i])
-        obsv_xn.append(-obsv_x[0][i])
+            obsv_xn = []
+            for j in range(obsv_len):
+                obsv_xn.append(obsv_x[-obsv_len + j][i])
+            obsv_xn.append(-obsv_x[0][i])
 
-        pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
-        scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len/ len_scale)
-        pred_x_cov /= scale_x
-        gp_pred_x[i] = copy(pred_x)
-        gp_pred_x_cov[i] = copy(pred_x_cov)
+            pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
+            scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len)
+            pred_x_cov /= scale_x
+            gp_pred_x[i] = copy(pred_x)
+            gp_pred_x_cov[i] = copy(pred_x_cov)
 
-        # here we do gp regression on y coordinate
-        gp_y[i].compute(obsv_t, obsv_err)
-        obsv_yn = []
-        for j in range(obsv_len):
-            obsv_yn.append(obsv_y[-obsv_len + j][i])
-        obsv_yn.append(-obsv_y[0][i])
-        pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
-        scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len/ len_scale)
-        pred_y_cov /= scale_y
-        gp_pred_y[i] = copy(pred_y)
-        gp_pred_y_cov[i] = copy(pred_y_cov)
+            # here we do gp regression on y coordinate
+            gp_y[i].compute(obsv_t, obsv_err)
+            obsv_yn = []
+            for j in range(obsv_len):
+                obsv_yn.append(obsv_y[-obsv_len + j][i])
+            obsv_yn.append(-obsv_y[0][i])
+
+            pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
+            scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len)
+            pred_y_cov /= scale_y
+            gp_pred_y[i] = copy(pred_y)
+            gp_pred_y_cov[i] = copy(pred_y_cov)
+        else: # for pedestrian we condition on predicted goal
+            # indices/labels for gp regression
+            pred_t = np.arange(pred_len) + obsv_len
+            obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
+            obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
+
+            # here we do gp regression on x coordinate
+            gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
+
+            obsv_xn = []
+            for j in range(obsv_len):
+                obsv_xn.append(obsv_x[-obsv_len + j][i])
+            # predict goal's x coordinate
+            curr_agent_x = obsv_x[-1][i]
+            curr_vel_x = obsv_x[-1][i] - obsv_x[-2][i]
+            curr_goal_x = curr_agent_x + curr_vel_x * (pred_len - 1)
+            obsv_xn.append(curr_goal_x)
+
+            pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
+            scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len / len_scale)
+            pred_x_cov /= scale_x
+            gp_pred_x[i] = copy(pred_x)
+            gp_pred_x_cov[i] = copy(pred_x_cov)
+
+            # here we do gp regression on y coordinate
+            gp_y[i].compute(obsv_t, obsv_err)
+            obsv_yn = []
+            for j in range(obsv_len):
+                obsv_yn.append(obsv_y[-obsv_len + j][i])
+            # predict goal's y coordinate
+            curr_agent_y = obsv_y[-1][i]
+            curr_vel_y = obsv_y[-1][i] - obsv_y[-2][i]
+            curr_goal_y = curr_agent_y + curr_vel_y * (pred_len - 1)
+            obsv_yn.append(curr_goal_y)
+
+            pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
+            scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len / len_scale)
+            pred_y_cov /= scale_y
+            gp_pred_y[i] = copy(pred_y)
+            gp_pred_y_cov[i] = copy(pred_y_cov)
 
     return gp_pred_x, gp_pred_y, gp_pred_x_cov, gp_pred_y_cov, pred_len
 
@@ -167,7 +277,7 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents,len_scale,
 
 
     ## predict
-    gp_pred_x, gp_pred_y, pred_x_cov, pred_y_cov, pred_len = gp_predict(num_agents, robot_state, vel, dt,len_scale,
+    gp_pred_x, gp_pred_y, pred_x_cov, pred_y_cov, pred_len = gp_predict(robot_idx,num_agents, robot_state, vel, dt,len_scale,
                obsv_len, obsv_err_magnitude, gp_x, gp_y,
                cov_thred_x, cov_thred_y, obsv_x, obsv_y,  gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov)
 
