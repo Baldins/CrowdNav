@@ -653,11 +653,12 @@ class CrowdSim_IGP(gym.Env):
 
             for i in range(self.human_num ):
                 circles = []
-                # for j in range(len(agents_future_positions[0])):
-                circle = plt.Circle((agents_future_positions[0][i],agents_future_positions[1][i]), self.humans[0].radius/(1.7), fill=False, color=cmap(i))
-                ax.add_artist(circle)
-                circles.append(circle)
-                agents_future_circles.append(circles)
+                print(agents_future_positions[0][i])
+                for j in range(len(agents_future_positions[0][0])):
+                    circle = plt.Circle((agents_future_positions[0][i][j],agents_future_positions[1][i][j]), self.humans[0].radius/(1.7), fill=False, color=cmap(i))
+                    ax.add_artist(circle)
+                    circles.append(circle)
+                    agents_future_circles.append(circles)
 
 
             def update(frame_num):
@@ -682,9 +683,12 @@ class CrowdSim_IGP(gym.Env):
                 for i, circles in enumerate(agents_future_circles):
                     print("i", i, " cirle", circles)
                     for j, circle in enumerate(circles):
+                        print("j", j)
                         print("agents_future_circles", agents_future_positions[0][j])
-                        circle.center = [agents_future_positions[0][j][i], agents_future_positions[1][j][i]]
-                        print("circle", circle.center)
+                        for k in range(len(agents_future_positions[0][j])):
+
+                            circle.center = [agents_future_positions[0][j][k], agents_future_positions[1][j][k]]
+                            print("circle", circle.center)
 
                 time.set_text('Time: {:.2f}'.format(frame_num * self.time_step))
 
