@@ -344,7 +344,7 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
         ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"agent{i}", c=colors[i])
         ax.scatter(samples_x[i * num_samples: i * num_samples + num_samples_visual].ravel(),
                    samples_y[i * num_samples: i * num_samples + num_samples_visual].ravel(),
-                   linewidth=0.5, c=np.array([colors[i]]), alpha=0.4)
+                   linewidth=0.5, c=np.array([colors[i]]), alpha=0.3)
         # j = 0
         for j, human in enumerate(state.human_states):
             circle = plt.Circle((human.px, human.py), 0.3, color=np.array(colors[j]))
@@ -356,8 +356,8 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"robot", c=colors[i])
     ax.scatter(samples_x[i * num_samples: i * num_samples + num_samples_visual].ravel(),
                samples_y[i * num_samples: i * num_samples + num_samples_visual].ravel(),
-               linewidth=0.5, c=np.array([colors[i]]))
-    robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color=colors[i],alpha=0.4)
+               linewidth=0.5, c=np.array([colors[i]]), alpha=0.3)
+    robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color=colors[i])
     ax.add_patch(robot)
     ax.annotate("R", xy=(state.self_state.px, state.self_state.py),fontsize=15, weight='bold', verticalalignment='center', horizontalalignment='center')
 
