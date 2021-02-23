@@ -310,7 +310,7 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
     samples_x, samples_y, samples_pdf = gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov,
                                                     gp_pred_y, gp_pred_y_cov, samples_x, samples_y,
                                                     include_mean=True)
-    print("sample_x", samples_x[0])
+    print("sample_x", samples_x)
     ## weight
     weights = weight_compute(a, h, obj_thred, max_iter, samples_x, samples_y, num_agents, num_samples, pred_len)
 
@@ -328,6 +328,7 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
     # matplotlib config
     # maplotlib initialization
 
+
     fig, ax = plt.subplots(1, 1, figsize=(8., 8.), tight_layout=True)
     ax.set_xlim(-6, 6)
     ax.set_ylim(-6, 6)
@@ -337,9 +338,10 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
         ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"agent{i}")
         ax.scatter(samples_x[i], samples_y[i], linewidth=1)
         for human in state.human_states:
-            circle = plt.Circle((human.px, human.py), 0.3, label=f'agent{i}')
+            circle = plt.Circle((human.px, human.py), 0.3, color='r')
             ax.add_patch(circle)
-        robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color='k', label='robot')
-        ax.add_patch(robot)
+    robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color='k', label='robot')
+    ax.add_patch(robot)
+    plt.legend()
     plt.show()
     return opt_robot_x, opt_robot_y, traj_x, traj_y
