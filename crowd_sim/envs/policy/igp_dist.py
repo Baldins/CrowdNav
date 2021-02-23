@@ -38,7 +38,7 @@ class Igp_Dist(Policy):
         self.vel = 0.6
         self.collision_thresh = 0.3
         self.len_scale = 5
-        self.num_agents = 8
+        self.num_agents = 15
         self.cov_thred_x = 0.05
         self.cov_thred_y = 0.05
         self.obsv_err_magnitude = 0.001

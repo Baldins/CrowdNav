@@ -336,25 +336,26 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     ax.set_ylim(-6, 6)
     ax.set_xlabel('x(m)', fontsize=16)
     ax.set_ylabel('y(m)', fontsize=16)
-    cmap = plt.get_cmap("tab10")
+    cmap = plt.get_cmap("gnuplot")
     for i in range(num_agents):
+        colors = [cmap(i) for i in np.linspace(0, 1, num_agents)]
         if i == robot_idx:
             continue
-        ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"agent{i}", c=cmap(i))
+        ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"agent{i}", c=colors[i])
         ax.scatter(samples_x[i * num_samples: i * num_samples + num_samples_visual].ravel(),
                    samples_y[i * num_samples: i * num_samples + num_samples_visual].ravel(),
-                   linewidth=0.5, c=np.array([cmap(i)]))
-        j = 0
-        for human in state.human_states:
-            circle = plt.Circle((human.px, human.py), 0.3, color=np.array(cmap(j)))
+                   linewidth=0.5, c=np.array([colors[i]]))
+        # j = 0
+        for j, human in enumerate(state.human_states):
+            circle = plt.Circle((human.px, human.py), 0.3, color=np.array(colors[j]))
             ax.add_patch(circle)
-            j += 1
+            # j += 1
     i = robot_idx
-    ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"robot", c=cmap(i))
+    ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"robot", c=colors[i])
     ax.scatter(samples_x[i * num_samples: i * num_samples + num_samples_visual].ravel(),
                samples_y[i * num_samples: i * num_samples + num_samples_visual].ravel(),
-               linewidth=0.5, c=np.array([cmap(i)]))
-    robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color=cmap(i))
+               linewidth=0.5, c=np.array([colors[i]]))
+    robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color=colors[i])
     ax.add_patch(robot)
 
     file_name = 'frame_{0:04}.png'.format(frame)
