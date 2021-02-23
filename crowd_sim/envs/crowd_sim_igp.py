@@ -10,6 +10,7 @@ from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
+import matplotlib.pyplot as plt
 
 class CrowdSim_IGP(gym.Env):
     metadata = {'render.modes': ['human']}

@@ -4,6 +4,7 @@ from scipy.stats import multivariate_normal as mvn
 import george
 from copy import copy
 from crowd_sim.envs.utils.igp_dist_utils import *
+import matplotlib.pyplot as plt
 
 
 def add_observation(obsv_xt, obsv_yt, obsv_x, obsv_y):
@@ -309,7 +310,7 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
     samples_x, samples_y, samples_pdf = gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov,
                                                     gp_pred_y, gp_pred_y_cov, samples_x, samples_y,
                                                     include_mean=True)
-
+    print("sample_x", samples_x[0])
     ## weight
     weights = weight_compute(a, h, obj_thred, max_iter, samples_x, samples_y, num_agents, num_samples, pred_len)
 
@@ -324,4 +325,21 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
         traj_x, traj_y = get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weights,
                                       sampels_pdf=None)
 
+    # matplotlib config
+    # maplotlib initialization
+
+    fig, ax = plt.subplots(1, 1, figsize=(8., 8.), tight_layout=True)
+    ax.set_xlim(-6, 6)
+    ax.set_ylim(-6, 6)
+    ax.set_xlabel('x(m)', fontsize=16)
+    ax.set_ylabel('y(m)', fontsize=16)
+    for i in range(num_agents):
+        ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"agent{i}")
+        ax.scatter(samples_x[i], samples_y[i], linewidth=1)
+        for human in state.human_states:
+            circle = plt.Circle((human.px, human.py), 0.3, label=f'agent{i}')
+            ax.add_patch(circle)
+        robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color='k', label='robot')
+        ax.add_patch(robot)
+    plt.show()
     return opt_robot_x, opt_robot_y, traj_x, traj_y
