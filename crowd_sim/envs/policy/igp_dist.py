@@ -2,12 +2,14 @@ import numpy as np
 from scipy.stats import multivariate_normal as mvn
 import george
 from copy import copy
+import time
 import math
 from crowd_sim.envs.utils.igp_dist_utils import compute
 from crowd_sim.envs.policy.policy import Policy
 from crowd_sim.envs.utils.action import ActionXY
 
 from crowd_sim.envs.policy.igp_fun import *
+
 
 class Igp_Dist(Policy):
     """igp-dist class"""
@@ -26,25 +28,27 @@ class Igp_Dist(Policy):
         self.max_speed = 1
         self.dt = 1
         self.pred_len = 0
-        self.num_samples = 100
+        self.num_samples = 500
         self.obsv_xt = []
         self.obsv_yt = []
         self.obsv_x = []
         self.obsv_y = []
-        self.obsv_len = 1
+        self.obsv_len = 2
         self.count = 0
-        self.vel = 0.8
+        self.vel = 0.2
         self.collision_thresh = 0.5
-        self.len_scale = 2
-        self.num_agents = 22
-        self.cov_thred_x = 0.3
-        self.cov_thred_y = 0.3
+        self.len_scale = 5
+        self.num_agents = 14
+        self.cov_thred_x = 0.02
+        self.cov_thred_y = 0.02
         self.obsv_err_magnitude = 0.001
-        self.a = 0.4 # a controls safety region
-        self.h = 1.0  # h controls safety weight
-        self.obj_thred = 0.001  # terminal condition for optimization
-        self.max_iter = 150  # maximal number of iterations allowed
+        self.a = 0.1  # a controls safety region
+        self.h = 10.0  # h controls safety weight
+        self.obj_thred = 0.0001  # terminal condition for optimization
+        self.max_iter = 1000  # maximal number of iterations allowed
         self.weights = np.zeros(self.num_agents)
+        self.include_pdf = True
+        self.actuate_index = 2
 
         self.gp_pred_x = [0. for _ in range(self.num_agents)]
         self.gp_pred_x_cov = [0. for _ in range(self.num_agents)]
@@ -79,9 +83,9 @@ class Igp_Dist(Policy):
         robot_state = state.self_state
         robot_x = robot_state.px
         robot_y = robot_state.py
-        self.count+=1
-        obsv_xt =[]
-        obsv_yt =[]
+        self.count += 1
+        obsv_xt = []
+        obsv_yt = []
         for i, human in enumerate(state.human_states):
             obsv_xt.append(human.px)
             obsv_yt.append(human.py)
@@ -91,25 +95,44 @@ class Igp_Dist(Policy):
         obsv_yt.append(robot_y)
         robot_idx = idx + 1
 
-        self.obsv_x, self.obsv_y = add_observation(obsv_xt, obsv_yt, self.obsv_x, self.obsv_y)
+        # open file to write
+        # with open('/home/msun/igp_data.txt', 'a') as the_file:
+        #     for k in range(self.num_agents - 1):
+        #         the_file.write(str(obsv_xt[k]) + ',')
+        #         the_file.write(str(obsv_yt[k]) + ',')
+        #     the_file.write("\n")
 
+        # self.obsv_x, self.obsv_y = add_observation(obsv_xt, obsv_yt, self.obsv_x, self.obsv_y)
+        self.obsv_x.append(obsv_xt.copy())
+        self.obsv_y.append(obsv_yt.copy())
 
+        self.gp_pred_x = [0. for _ in range(self.num_agents)]
+        self.gp_pred_x_cov = [0. for _ in range(self.num_agents)]
+        self.gp_pred_y = [0. for _ in range(self.num_agents)]
+        self.gp_pred_y_cov = [0. for _ in range(self.num_agents)]
+        self.samples_x = [0. for _ in range(self.num_agents)]
+        self.samples_y = [0. for _ in range(self.num_agents)]
 
         # vel = robot_state.v_pref
         vel = self.vel
         print(self.count)
         if self.count > self.obsv_len:
-            print("IGP")
-            opt_robot_x, opt_robot_y, traj_x, traj_y = igp(state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples, self.num_agents, self.len_scale,
-                                            self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
-                                            self.obsv_len, self.obsv_err_magnitude, self.cov_thred_x, self.cov_thred_y,
-                                            self.gp_x, self.gp_y, self.gp_pred_x, self.gp_pred_x_cov, self.gp_pred_y, self.gp_pred_y_cov, self.samples_x, self.samples_y, self.weights)
-            print("opt robot" ,opt_robot_y)
+            print("IGP, robot_idx: ", robot_idx)
+            opt_robot_x, opt_robot_y, traj_x, traj_y = igp(state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples,
+                                                           self.num_agents, self.len_scale,
+                                                           self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
+                                                           self.obsv_len, self.obsv_err_magnitude, self.cov_thred_x,
+                                                           self.cov_thred_y,
+                                                           self.gp_x, self.gp_y, self.gp_pred_x, self.gp_pred_x_cov,
+                                                           self.gp_pred_y, self.gp_pred_y_cov, self.samples_x,
+                                                           self.samples_y, self.weights, include_pdf=self.include_pdf,
+                                                           actuate_index=self.actuate_index)
+            print("opt robot", opt_robot_y)
 
             close_obst = []
             close_obst2 = []
 
-            for k in range(self.num_agents -1):
+            for k in range(self.num_agents - 1):
                 # print(traj_x[k][0])
                 distance = math.sqrt((traj_x[k][0] - opt_robot_x) ** 2 + (traj_y[k][0] - opt_robot_y) ** 2)
                 # print("distance ", distance)
@@ -117,21 +140,22 @@ class Igp_Dist(Policy):
                     close_obst.append([traj_x[k], traj_y[k], distance])
                 # generate velocity command
 
-            if (len(close_obst) == 0 ):  # no obstacles
+            if (len(close_obst) == 0):  # no obstacles
 
                 vel_x = (opt_robot_x - robot_x) / self.dt
                 vel_y = (opt_robot_y - robot_y) / self.dt
+                print("opt_robot_x: ", opt_robot_x)
 
                 # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                # vel_x = np.cos(theta) * vel
-                # vel_y = np.sin(theta) * vel
+                # vel_x = np.cos(theta) * robot_state.v_pref * self.vel
+                # vel_y = np.sin(theta) * robot_state.v_pref * self.vel
             else:
-                vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
-                vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
-                # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                #
-                # vel_x = 0.000001 * np.cos(theta) * vel
-                # vel_y = 0.000001 * np.sin(theta) * vel
+                # vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
+                # vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
+                theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
+
+                vel_x = 0.000001 * np.cos(theta) * vel
+                vel_y = 0.000001 * np.sin(theta) * vel
 
             action = ActionXY(vel_x, vel_y)
         else:
@@ -158,4 +182,3 @@ class Igp_Dist(Policy):
             traj_y[i] = self.samples_y[i * self.num_samples + opt_idx].copy()
 
         return traj_x, traj_y
-

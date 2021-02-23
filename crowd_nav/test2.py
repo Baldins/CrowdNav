@@ -110,13 +110,15 @@ def main():
     robot.print_info()
     non_attentive_humans = []
 
-    for case in range(args.test_case):
+    # for case in range(args.test_case):
+    for case in range(1):
         print(case)
         rewards = []
 
         # if args.visualize:
 
-        ob = env.reset(test_case=case)
+        # ob = env.reset(test_case=case)
+        ob = env.reset(test_case=args.test_case - 1)
 
         # ob = env.reset(args.phase, case)
         done = False

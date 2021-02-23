@@ -690,7 +690,7 @@ class CrowdSim_mixed(gym.Env):
             #if output_file is not None:
             ffmpeg_writer = animation.writers['ffmpeg']
             writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-            anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
+            anim.save("/home/msun/Code/CrowdNav/igp_square.mp4", writer=writer)
             # else:
             plt.show()
         else:
