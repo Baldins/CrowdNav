@@ -357,7 +357,7 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color=cmap(i))
     ax.add_patch(robot)
 
-    file_name = 'frame_{0:03}.png'.format(frame)
+    file_name = 'frame_{0:04}.png'.format(frame)
     plt.savefig(temp_dir + file_name)
 
     plt.legend()
