@@ -243,7 +243,7 @@ def weight_compute(a, h, obj_thred, max_iter, samples_x, samples_y, human_num, n
     return weights
 
 
-def actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt=1, samples_pdf=None):
+def actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt=1, samples_pdf=None, actuate_index=0):
     """
     generate velocity command for robot
     :param dt: interval of simulation step
@@ -256,8 +256,14 @@ def actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt=1, samples
     else:
         print("pdf NOT included for actuate")
         opt_idx = np.argmax(weights[robot_idx])
-    opt_robot_x = samples_x[robot_idx * num_samples + opt_idx][0]
-    opt_robot_y = samples_y[robot_idx * num_samples + opt_idx][0]
+    opt_sample_x = samples_x[robot_idx * num_samples + opt_idx]
+    opt_sample_y = samples_y[robot_idx * num_samples + opt_idx]
+    if len(opt_sample_y) > actuate_index:
+        opt_robot_x = samples_x[robot_idx * num_samples + opt_idx][actuate_index]
+        opt_robot_y = samples_y[robot_idx * num_samples + opt_idx][actuate_index]
+    else:
+        opt_robot_x = samples_x[robot_idx * num_samples + opt_idx][-1]
+        opt_robot_y = samples_y[robot_idx * num_samples + opt_idx][-1]
 
     return opt_robot_x, opt_robot_y
 
@@ -310,11 +316,11 @@ def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
     ## actuate
     if include_pdf is True:
         opt_robot_x, opt_robot_y = actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt,
-                                           samples_pdf=samples_pdf)
+                                           samples_pdf=samples_pdf, actuate_index=actuate_index)
         traj_x, traj_y = get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weights,
                                       sampels_pdf=samples_pdf)
     else:
-        opt_robot_x, opt_robot_y = actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt, samples_pdf=None)
+        opt_robot_x, opt_robot_y = actuate(weights, robot_idx, num_samples, samples_x, samples_y, dt, samples_pdf=None, actuate_index=actuate_index)
         traj_x, traj_y = get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weights,
                                       sampels_pdf=None)
 
