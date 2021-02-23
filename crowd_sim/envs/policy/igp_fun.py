@@ -5,6 +5,7 @@ import george
 from copy import copy
 from crowd_sim.envs.utils.igp_dist_utils import *
 import matplotlib.pyplot as plt
+import os
 
 
 def add_observation(obsv_xt, obsv_yt, obsv_x, obsv_y):
@@ -289,7 +290,7 @@ def get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weight
 def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
         a, h, obj_thred, max_iter, vel, dt, obsv_len, obsv_err_magnitude, cov_thred_x, cov_thred_y, gp_x, gp_y,
         gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov, samples_x, samples_y, weights,
-        include_pdf=False, actuate_index=0, num_samples_visual=1):
+        include_pdf=False, actuate_index=0, num_samples_visual=1, frame=0, temp_dir=''):
     robot_state = state.self_state
     goals_x = []
     goals_y = []
@@ -356,6 +357,10 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color=cmap(i))
     ax.add_patch(robot)
 
+    file_name = 'frame_{0:03}.png'.format(frame)
+    plt.savefig(temp_dir + file_name)
+
     plt.legend()
     plt.pause(1.0)
+
     return opt_robot_x, opt_robot_y, traj_x, traj_y

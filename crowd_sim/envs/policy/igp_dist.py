@@ -3,6 +3,7 @@ from scipy.stats import multivariate_normal as mvn
 import george
 from copy import copy
 import matplotlib.pyplot as plt
+import os
 import math
 from crowd_sim.envs.utils.igp_dist_utils import compute
 from crowd_sim.envs.policy.policy import Policy
@@ -73,6 +74,9 @@ class Igp_Dist(Policy):
         # visualization
         self.fig, self.ax = plt.subplots(1, 1, figsize=(8., 8.))
         self.num_samples_visual = 10  # number of samples to be visualized
+        self.frame = 0
+        self.temp_dir = '../frames/' + time.asctime() + '/'
+        os.makedirs(self.temp_dir)
 
     def configure(self, config):
         return
@@ -116,6 +120,7 @@ class Igp_Dist(Policy):
         print(self.count)
         if self.count > self.obsv_len:
             print("IGP, robot_idx: ", robot_idx)
+            self.frame += 1
             opt_robot_x, opt_robot_y, traj_x, traj_y = igp(self.fig, self.ax, state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples,
                                                            self.num_agents, self.len_scale,
                                                            self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
@@ -125,7 +130,8 @@ class Igp_Dist(Policy):
                                                            self.gp_pred_y, self.gp_pred_y_cov, self.samples_x,
                                                            self.samples_y, self.weights,
                                                            include_pdf=self.include_pdf, actuate_index=self.actuate_index,
-                                                           num_samples_visual=self.num_samples_visual)
+                                                           num_samples_visual=self.num_samples_visual, frame=self.frame,
+                                                           temp_dir=self.temp_dir)
             print("opt robot", opt_robot_y)
 
             close_obst = []
