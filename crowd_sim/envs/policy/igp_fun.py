@@ -108,8 +108,6 @@ def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_
             samples_x[i * num_samples] = gp_pred_x[i]
             samples_y[i * num_samples] = gp_pred_y[i]
 
-    # print("sample_x", samples_x)
-    # print("sample_y", samples_y)
 
     return samples_x, samples_y
 

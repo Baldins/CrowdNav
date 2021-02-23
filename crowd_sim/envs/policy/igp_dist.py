@@ -31,19 +31,19 @@ class Igp_Dist(Policy):
         self.obsv_yt = []
         self.obsv_x = []
         self.obsv_y = []
-        self.obsv_len = 1
+        self.obsv_len = 2
         self.count = 0
-        self.vel = 0.8
+        self.vel = 0.5
         self.collision_thresh = 0.5
         self.len_scale = 2
         self.num_agents = 22
-        self.cov_thred_x = 0.3
-        self.cov_thred_y = 0.3
+        self.cov_thred_x = 0.1
+        self.cov_thred_y = 0.1
         self.obsv_err_magnitude = 0.001
         self.a = 0.4 # a controls safety region
-        self.h = 1.0  # h controls safety weight
+        self.h = 5.0  # h controls safety weight
         self.obj_thred = 0.001  # terminal condition for optimization
-        self.max_iter = 150  # maximal number of iterations allowed
+        self.max_iter = 500  # maximal number of iterations allowed
         self.weights = np.zeros(self.num_agents)
 
         self.gp_pred_x = [0. for _ in range(self.num_agents)]
@@ -64,11 +64,16 @@ class Igp_Dist(Policy):
             self.gp_x[i].set_parameter_vector(hyper_x)
             self.gp_y[i].set_parameter_vector(hyper_y)
 
+
+        self.trajs_x = []
+        self.trajs_y = []
+
     def configure(self, config):
         return
 
     def set_phase(self, phase):
         return
+
 
     def predict(self, state):
         """
@@ -108,6 +113,14 @@ class Igp_Dist(Policy):
 
             close_obst = []
             close_obst2 = []
+            self.trajs_x = traj_x
+            self.trajs_y = traj_y
+
+            # print("self_traj", self.trajs)
+            #
+            # for k in range(len(self.trajs[0])):
+            #     print("traj = ",k, self.trajs[0][k], self.trajs[1][k])
+
 
             for k in range(self.num_agents -1):
                 # print(traj_x[k][0])
@@ -119,19 +132,20 @@ class Igp_Dist(Policy):
 
             if (len(close_obst) == 0 ):  # no obstacles
 
-                vel_x = (opt_robot_x - robot_x) / self.dt
-                vel_y = (opt_robot_y - robot_y) / self.dt
+                # vel_x = (opt_robot_x - robot_x) / self.dt
+                # vel_y = (opt_robot_y - robot_y) / self.dt
 
-                # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                # vel_x = np.cos(theta) * vel
-                # vel_y = np.sin(theta) * vel
+
+                theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
+                vel_x = np.cos(theta) * robot_state.v_pref
+                vel_y = np.sin(theta) * robot_state.v_pref
             else:
-                vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
-                vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
-                # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                #
-                # vel_x = 0.000001 * np.cos(theta) * vel
-                # vel_y = 0.000001 * np.sin(theta) * vel
+                # vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
+                # vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
+                theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
+
+                vel_x = 0.000001 * np.cos(theta) * vel
+                vel_y = 0.000001 * np.sin(theta) * vel
 
             action = ActionXY(vel_x, vel_y)
         else:
@@ -144,6 +158,9 @@ class Igp_Dist(Policy):
         self.obsv_xt = []
         self.obsv_yt = []
         return action
+
+    def get_traj(self):
+        return self.trajs_x, self.trajs_y
 
     def get_opt_traj(self):
         """

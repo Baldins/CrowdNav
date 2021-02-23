@@ -3,13 +3,15 @@ import gym
 import matplotlib.lines as mlines
 import numpy as np
 import rvo2
+import time
+import random
 from matplotlib import patches
 from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 
-class CrowdSim(gym.Env):
+class CrowdSim_IGP(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
@@ -46,6 +48,9 @@ class CrowdSim(gym.Env):
         self.states = None
         self.action_values = None
         self.attention_weights = None
+
+        self.trajs_x = list()
+        self.trajs_y = list()
 
     def configure(self, config):
         self.config = config
@@ -317,20 +322,60 @@ class CrowdSim(gym.Env):
 
         return ob
 
-    def onestep_lookahead(self, action):
-        return self.step(action, update=False)
+    def onestep_lookahead(self, action, non_attentive_humans):
+        return self.step(action,non_attentive_humans, update=False)
 
-    def step(self, action, update=True):
+    def step(self, action, non_attentive_humans, update=True):
         """
         Compute actions for all agents, detect collision, update environment and return (ob, reward, done, info)
 
         """
+
         human_actions = []
-        for human in self.humans:
-            # observation for humans is always coordinates
-            ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
-            if self.robot.visible:
+
+        # print(self.global_time)
+        # count = self.global_time
+        # non_attentive_humans = old_non_attentive_humans
+        # if count != 0:
+        # #     old_non_attentive_humans = []
+        # # else:
+        #     old_non_attentive_humans = non_attentive_humans
+        # # only record the first time the human reaches the goal
+        #
+        # if count % 4 == 0:
+        #     print("true")
+        #
+        #     non_attentive_humans = random.sample(self.humans, int(len(self.humans) / 2))
+        #     old_non_attentive_humans = non_attentive_humans
+        #
+        # # else:
+        # #     non_attentive_humans = old_non_attentive_humans
+
+
+        # non_attentive_humans = set(non_attentive_humans)
+
+        for i, human in enumerate(self.humans):
+                # observation for humans is always coordinates
+            # ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+
+
+
+            if human not in non_attentive_humans:
+                # print("attentive")
+                human.set_attentive()
+                ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+
+                # if self.robot.visible:
                 ob += [self.robot.get_observable_state()]
+
+            elif human in non_attentive_humans:
+                # print("disattentive")
+                ob = [other_human.get_observable_state() for other_human in self.humans if other_human != human]
+
+                human.set_non_attentive()
+
+            # print(human.get_observable_state())
+
             human_actions.append(human.act(ob))
 
             if human.reached_destination():
@@ -338,8 +383,9 @@ class CrowdSim(gym.Env):
                     sign = -1
                 else:
                     sign = 1
-                # human.set_goal_position([ np.random.random(), (np.random.random()) ])
-                human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign, (np.random.random()-0.5)*self.square_width , 0, 0, 0)
+                human.set(human.px, human.py, np.random.random() * self.square_width * 0.5 * -sign,
+                          (np.random.random() - 0.5) * self.square_width, 0, 0, 0)
+
 
         # collision detection
         dmin = float('inf')
@@ -368,8 +414,6 @@ class CrowdSim(gym.Env):
                 dmin = closest_dist
             elif closest_dist < 3:
                 ppl_count += 1
-
-
 
         # collision detection between humans
         human_num = len(self.humans)
@@ -409,7 +453,10 @@ class CrowdSim(gym.Env):
             done = False
             info = Nothing()
 
+        self.trajs_x, self.trajs_y = self.robot.policy.get_traj()
+
         if update:
+
             # store state, action value and attention weights
             self.states.append([self.robot.get_full_state(), [human.get_full_state() for human in self.humans]])
             if hasattr(self.robot.policy, 'action_values'):
@@ -458,8 +505,17 @@ class CrowdSim(gym.Env):
             ax.set_xlim(-4, 4)
             ax.set_ylim(-4, 4)
             for human in self.humans:
-                human_circle = plt.Circle(human.get_position(), human.radius, fill=False, color='b')
+
+                human_circle = plt.Circle(human.get_position(), human.radius, fill=True, color='b')
                 ax.add_artist(human_circle)
+
+            # for i in range(len(self.humans)):
+            #     if self.humans[i].attentive == False:
+            #         humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=True, color=cmap(i))
+            #
+            #     elif self.humans[i].attentive == True:
+            #         humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=False, color=cmap(i))
+
             ax.add_artist(plt.Circle(self.robot.get_position(), self.robot.radius, fill=True, color='r'))
             plt.show()
         elif mode == 'traj':
@@ -478,6 +534,13 @@ class CrowdSim(gym.Env):
                     robot = plt.Circle(robot_positions[k], self.robot.radius, fill=True, color=robot_color)
                     humans = [plt.Circle(human_positions[k][i], self.humans[i].radius, fill=False, color=cmap(i))
                               for i in range(len(self.humans))]
+                    for i in range(len(self.humans)):
+                        if self.humans[i].attentive == False:
+                            humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=True,color=cmap(i))
+
+                        elif self.humans[i].attentive == True:
+                            humans[i] = plt.Circle(human_positions[k][i], self.humans[i].radius, fill=False,color=cmap(i))
+
                     ax.add_artist(robot)
                     for human in humans:
                         ax.add_artist(human)
@@ -523,12 +586,21 @@ class CrowdSim(gym.Env):
             human_positions = [[state[1][j].position for j in range(len(self.humans))] for state in self.states]
             humans = [plt.Circle(human_positions[0][i], self.humans[i].radius, fill=False)
                       for i in range(len(self.humans))]
+            for i in range(len(self.humans)):
+                if self.humans[i].attentive == False:
+                    humans[i] = plt.Circle(human_positions[0][i], self.humans[i].radius, fill=True)
+
+                elif self.humans[i].attentive == True:
+                    humans[i] = plt.Circle(human_positions[0][i], self.humans[i].radius, fill=False)
+
             human_numbers = [plt.text(humans[i].center[0] - x_offset, humans[i].center[1] - y_offset, str(i),
                                       color='black', fontsize=12) for i in range(len(self.humans))]
             for i, human in enumerate(humans):
                 ax.add_artist(human)
                 ax.add_artist(human_numbers[i])
-
+            # for i, human in enumerate(humans):
+            #     ax.add_artist(human)
+            #     ax.add_artist(human_numbers[i])
             # add time annotation
             time = plt.text(-1, 5, 'Time: {}'.format(0), fontsize=16)
             ax.add_artist(time)
@@ -565,6 +637,29 @@ class CrowdSim(gym.Env):
                 ax.add_artist(arrow)
             global_step = 0
 
+
+            ## Display Samples
+            # self.trajs_x, self.trajs_y = self.robot.policy.get_traj()
+
+
+            # if len(self.trajs) != 0:
+            #     print("self.trajs", self.trajs[0])
+            # if len(self.trajs) != 0:
+
+            agents_future_positions = [self.trajs_x, self.trajs_y]
+            print("agents_future_positions", agents_future_positions[1][1])
+            agents_future_circles = []
+
+
+            for i in range(self.human_num ):
+                circles = []
+                # for j in range(len(agents_future_positions[0])):
+                circle = plt.Circle((agents_future_positions[0][i],agents_future_positions[1][i]), self.humans[0].radius/(1.7), fill=False, color=cmap(i))
+                ax.add_artist(circle)
+                circles.append(circle)
+                agents_future_circles.append(circles)
+
+
             def update(frame_num):
                 nonlocal global_step
                 nonlocal arrows
@@ -582,6 +677,14 @@ class CrowdSim(gym.Env):
                     if self.attention_weights is not None:
                         human.set_color(str(self.attention_weights[frame_num][i]))
                         attention_scores[i].set_text('human {}: {:.2f}'.format(i, self.attention_weights[frame_num][i]))
+
+                print("agents_future_circles", agents_future_circles)
+                for i, circles in enumerate(agents_future_circles):
+                    print("i", i, " cirle", circles)
+                    for j, circle in enumerate(circles):
+                        print("agents_future_circles", agents_future_positions[0][j])
+                        circle.center = [agents_future_positions[0][j][i], agents_future_positions[1][j][i]]
+                        print("circle", circle.center)
 
                 time.set_text('Time: {:.2f}'.format(frame_num * self.time_step))
 
@@ -621,11 +724,11 @@ class CrowdSim(gym.Env):
             anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
             anim.running = True
 
-            if output_file is not None:
-                ffmpeg_writer = animation.writers['ffmpeg']
-                writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-                anim.save(output_file, writer=writer)
-            else:
-                plt.show()
+            #if output_file is not None:
+            ffmpeg_writer = animation.writers['ffmpeg']
+            writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
+            anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
+            # else:
+            plt.show()
         else:
             raise NotImplementedError
