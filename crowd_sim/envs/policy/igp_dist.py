@@ -38,7 +38,7 @@ class Igp_Dist(Policy):
         self.vel = 0.6
         self.collision_thresh = 0.3
         self.len_scale = 5
-        self.num_agents = 15
+        self.num_agents = 22
         self.cov_thred_x = 0.05
         self.cov_thred_y = 0.05
         self.obsv_err_magnitude = 0.001
@@ -48,7 +48,7 @@ class Igp_Dist(Policy):
         self.max_iter = 1000  # maximal number of iterations allowed
         self.weights = np.zeros(self.num_agents)
         self.include_pdf = True
-        self.actuate_index = 2
+        self.actuate_index = 3
 
         self.gp_pred_x = [0. for _ in range(self.num_agents)]
         self.gp_pred_x_cov = [0. for _ in range(self.num_agents)]
@@ -155,14 +155,14 @@ class Igp_Dist(Policy):
 
             if (len(close_obst) == 0 ):  # no obstacles
 
-                # vel_x = (opt_robot_x - robot_x) / self.dt
-                # vel_y = (opt_robot_y - robot_y) / self.dt
+                vel_x = (opt_robot_x - robot_x) / self.dt
+                vel_y = (opt_robot_y - robot_y) / self.dt
                 # print("opt_robot_x: ", opt_robot_x)
 
 
-                theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                vel_x =  np.cos(theta) * robot_state.v_pref
-                vel_y =  np.sin(theta) * robot_state.v_pref
+                # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
+                # vel_x =  np.cos(theta) * robot_state.v_pref
+                # vel_y =  np.sin(theta) * robot_state.v_pref
             else:
                 # vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
                 # vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
