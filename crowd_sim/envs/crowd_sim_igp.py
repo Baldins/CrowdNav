@@ -453,6 +453,7 @@ class CrowdSim_IGP(gym.Env):
             done = False
             info = Nothing()
 
+        self.trajs_x, self.trajs_y = self.robot.policy.get_traj()
 
         if update:
 
