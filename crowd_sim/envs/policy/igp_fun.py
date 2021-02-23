@@ -349,6 +349,8 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
         for j, human in enumerate(state.human_states):
             circle = plt.Circle((human.px, human.py), 0.3, color=np.array(colors[j]))
             ax.add_patch(circle)
+            ax.annotate(f"{j}", xy=(human.px, human.py), fontsize=15, ha="center")
+
             # j += 1
     i = robot_idx
     ax.plot(traj_x[i], traj_y[i], linestyle='--', linewidth=5, label=f"robot", c=colors[i])
@@ -357,6 +359,7 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
                linewidth=0.5, c=np.array([colors[i]]))
     robot = plt.Circle((state.self_state.px, state.self_state.py), 0.3, color=colors[i])
     ax.add_patch(robot)
+    ax.annotate("R", xy=(state.self_state.px, state.self_state.py), fontsize=15, ha="center")
 
     file_name = 'frame_{0:04}.png'.format(frame)
     plt.savefig(temp_dir + file_name)
