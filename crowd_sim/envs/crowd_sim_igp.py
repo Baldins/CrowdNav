@@ -453,9 +453,10 @@ class CrowdSim_IGP(gym.Env):
             done = False
             info = Nothing()
 
-        self.trajs_x, self.trajs_y = self.robot.policy.get_traj()
 
         if update:
+
+            self.trajs_x, self.trajs_y = self.robot.policy.get_traj()
 
             # store state, action value and attention weights
             self.states.append([self.robot.get_full_state(), [human.get_full_state() for human in self.humans]])
@@ -639,19 +640,7 @@ class CrowdSim_IGP(gym.Env):
 
 
 
-            agents_future_positions = [self.trajs_x, self.trajs_y]
-            # print("agents_future_positions", agents_future_positions[1][1])
-            agents_future_circles = []
 
-
-            for i in range(self.human_num ):
-                circles = []
-                print(agents_future_positions[0][i])
-                for j in range(len(agents_future_positions[0][0])):
-                    circle = plt.Circle((agents_future_positions[0][i][j],agents_future_positions[1][i][j]), self.humans[0].radius/(1.7+j), fill=False, color=cmap(i))
-                    ax.add_artist(circle)
-                    circles.append(circle)
-                    agents_future_circles.append(circles)
 
 
             def update(frame_num):
@@ -659,6 +648,21 @@ class CrowdSim_IGP(gym.Env):
                 nonlocal arrows
                 global_step = frame_num
                 robot.center = robot_positions[frame_num]
+
+                agents_future_positions = [self.trajs_x, self.trajs_y]
+                # print("agents_future_positions", agents_future_positions[1][1])
+                agents_future_circles = []
+
+                for i in range(self.human_num):
+                    circles = []
+                    # print(agents_future_positions[0][i])
+                    for j in range(len(agents_future_positions[0][0])):
+                        circle = plt.Circle((agents_future_positions[0][i][j], agents_future_positions[1][i][j]),
+                                            self.humans[0].radius / (1.7), fill=False, color=cmap(i))
+                        ax.add_artist(circle)
+                        circles.append(circle)
+                        agents_future_circles.append(circles)
+
                 for i, human in enumerate(humans):
                     human.center = human_positions[frame_num][i]
                     human_numbers[i].set_position((human.center[0] - x_offset, human.center[1] - y_offset))
