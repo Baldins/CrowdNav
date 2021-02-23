@@ -638,13 +638,6 @@ class CrowdSim_IGP(gym.Env):
             global_step = 0
 
 
-            ## Display Samples
-            # self.trajs_x, self.trajs_y = self.robot.policy.get_traj()
-
-
-            # if len(self.trajs) != 0:
-            #     print("self.trajs", self.trajs[0])
-            # if len(self.trajs) != 0:
 
             agents_future_positions = [self.trajs_x, self.trajs_y]
             print("agents_future_positions", agents_future_positions[1][1])
