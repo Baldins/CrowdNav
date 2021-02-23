@@ -67,11 +67,12 @@ class Igp_Dist(Policy):
             self.gp_x[i].set_parameter_vector(hyper_x)
             self.gp_y[i].set_parameter_vector(hyper_y)
 
-
         self.trajs_x = []
         self.trajs_y = []
 
+        # visualization
         self.fig, self.ax = plt.subplots(1, 1, figsize=(8., 8.))
+        self.num_samples_visual = 10  # number of samples to be visualized
 
     def configure(self, config):
         return
@@ -122,8 +123,9 @@ class Igp_Dist(Policy):
                                                            self.cov_thred_y,
                                                            self.gp_x, self.gp_y, self.gp_pred_x, self.gp_pred_x_cov,
                                                            self.gp_pred_y, self.gp_pred_y_cov, self.samples_x,
-                                                           self.samples_y, self.weights, include_pdf=self.include_pdf,
-                                                           actuate_index=self.actuate_index)
+                                                           self.samples_y, self.weights,
+                                                           include_pdf=self.include_pdf, actuate_index=self.actuate_index,
+                                                           num_samples_visual=self.num_samples_visual)
             print("opt robot", opt_robot_y)
 
             close_obst = []
