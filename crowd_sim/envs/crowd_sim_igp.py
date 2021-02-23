@@ -646,8 +646,8 @@ class CrowdSim_IGP(gym.Env):
 
             for i in range(self.human_num+1):
                 circles = []
-                # print("(agents_future_positions", agents_future_positions[0][0])
-                for j in range(len(agents_future_positions[0][0])):
+                print("(agents_future_positions", len(agents_future_positions[0][0]))
+                for j in range(len(agents_future_positions[0][0][i])):
                     circle = plt.Circle((agents_future_positions[0][0][i][j], agents_future_positions[1][0][i][j]),
                                         self.humans[0].radius / (1.7+j), fill=False, color=cmap(i))
                     ax.add_artist(circle)

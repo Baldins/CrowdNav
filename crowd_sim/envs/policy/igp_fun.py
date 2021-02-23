@@ -34,10 +34,10 @@ def gp_predict(state, robot_idx, num_agents, robot_state, vel, dt, len_scale,
     :return: length of the predicted trajectory
     """
     # initialization
-    # gp_pred_x = [0. for _ in range(num_agents)]
-    # gp_pred_x_cov = [0. for _ in range(num_agents)]
-    # gp_pred_y = [0. for _ in range(num_agents)]
-    # gp_pred_y_cov = [0. for _ in range(num_agents)]
+    gp_pred_x = [0. for _ in range(num_agents)]
+    gp_pred_x_cov = [0. for _ in range(num_agents)]
+    gp_pred_y = [0. for _ in range(num_agents)]
+    gp_pred_y_cov = [0. for _ in range(num_agents)]
 
     # extract current robot pose from collected observations
     curr_robot_x = robot_state.px
@@ -51,85 +51,131 @@ def gp_predict(state, robot_idx, num_agents, robot_state, vel, dt, len_scale,
 
     print("pred_len", pred_len)
 
-    for i in range(num_agents):
-        if i == robot_idx: # for robot, we condition on real goal
-            # indices/labels for gp regression
-            pred_t = np.arange(pred_len) + obsv_len
-            obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
-            obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
+    for i, human in enumerate(state.human_states):
+        pred_t = np.arange(pred_len) + obsv_len
+        obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
+        obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
 
-            # here we do gp regression on x coordinate
-            gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
+        # here we do gp regression on x coordinate
+        gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
+        obsv_xn = []
+        for j in range(obsv_len):
+            obsv_xn.append(obsv_x[-obsv_len + j][i])
+        # predict goal's x coordinate
 
-            obsv_xn = []
-            for j in range(obsv_len):
-                obsv_xn.append(obsv_x[-obsv_len + j][i])
-            obsv_xn.append(-obsv_x[0][i])
+        curr_agent_x = human.px
+        curr_vel_x = human.vx
+        curr_goal_x = curr_agent_x + curr_vel_x * (pred_len - 1)
+        obsv_xn.append(curr_goal_x)
 
-            pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
-            scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len)
-            pred_x_cov /= scale_x
-            gp_pred_x[i] = copy(pred_x)
-            gp_pred_x_cov[i] = copy(pred_x_cov)
+        # here we do gp regression on y coordinate
+        gp_y[i].compute(obsv_t, obsv_err)
+        obsv_yn = []
+        for j in range(obsv_len):
+            obsv_yn.append(obsv_y[-obsv_len + j][i])
+        # predict goal's y coordinate
+        curr_agent_y = human.py
+        curr_vel_y = human.vy
+        curr_goal_y = curr_agent_y + curr_vel_y * (pred_len - 1)
+        obsv_yn.append(curr_goal_y)
 
-            # here we do gp regression on y coordinate
-            gp_y[i].compute(obsv_t, obsv_err)
-            obsv_yn = []
-            for j in range(obsv_len):
-                obsv_yn.append(obsv_y[-obsv_len + j][i])
-            obsv_yn.append(-obsv_y[0][i])
+        curr_vel = np.sqrt(curr_vel_x ** 2 + curr_vel_y ** 2)
+        scale = pred_len * curr_vel / 2
 
-            pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
-            scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len)
-            pred_y_cov /= scale_y
-            gp_pred_y[i] = copy(pred_y)
-            gp_pred_y_cov[i] = copy(pred_y_cov)
-        else: # for pedestrian we condition on predicted goal
-            # indices/labels for gp regression
-            for human in state.human_states:
-                pred_t = np.arange(pred_len) + obsv_len
-                obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
-                obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
+        pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
+        scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * scale)
+        pred_x_cov /= scale_x
+        gp_pred_x[i] = copy(pred_x)
+        gp_pred_x_cov[i] = copy(pred_x_cov)
 
-                # here we do gp regression on x coordinate
-                gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
+        pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
+        scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * scale)
+        pred_y_cov /= scale_y
+        gp_pred_y[i] = copy(pred_y)
+        gp_pred_y_cov[i] = copy(pred_y_cov)
+    #
+    # for i in range(num_agents):
+    #     if i == robot_idx: # for robot, we condition on real goal
 
-                obsv_xn = []
-                for j in range(obsv_len):
-                    obsv_xn.append(obsv_x[-obsv_len + j][i])
-                # predict goal's x coordinate
-                # curr_agent_x = obsv_x[-1][i]
-                curr_agent_x = human.px
-                # curr_vel_x = obsv_x[-1][i] - obsv_x[-2][i]
-                curr_vel_x = human.vx
+       ## Robot
 
-                curr_goal_x = curr_agent_x + curr_vel_x * (pred_len - 1)
-                obsv_xn.append(curr_goal_x)
 
-                pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
-                scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len / len_scale)
-                pred_x_cov /= scale_x
-                gp_pred_x[i] = copy(pred_x)
-                gp_pred_x_cov[i] = copy(pred_x_cov)
+        # indices/labels for gp regression
+        pred_t = np.arange(pred_len) + obsv_len
+        obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
+        obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
 
-                # here we do gp regression on y coordinate
-                gp_y[i].compute(obsv_t, obsv_err)
-                obsv_yn = []
-                for j in range(obsv_len):
-                    obsv_yn.append(obsv_y[-obsv_len + j][i])
-                # predict goal's y coordinate
-                # curr_agent_y = obsv_y[-1][i]
-                # curr_vel_y = obsv_y[-1][i] - obsv_y[-2][i]
-                curr_agent_y = human.py
-                curr_vel_y = human.vy
-                curr_goal_y = curr_agent_y + curr_vel_y * (pred_len - 1)
-                obsv_yn.append(curr_goal_y)
+        # here we do gp regression on x coordinate
+        gp_x[robot_idx].compute(np.asarray(obsv_t), np.asarray(obsv_err))
 
-                pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
-                scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len / len_scale)
-                pred_y_cov /= scale_y
-                gp_pred_y[i] = copy(pred_y)
-                gp_pred_y_cov[i] = copy(pred_y_cov)
+        obsv_xn = []
+        for j in range(obsv_len):
+            obsv_xn.append(obsv_x[-obsv_len + j][robot_idx])
+        obsv_xn.append(-obsv_x[0][robot_idx])
+
+        pred_x, pred_x_cov = gp_x[robot_idx].predict(obsv_xn, pred_t, return_cov=True)
+        scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * pred_len)
+        pred_x_cov /= scale_x
+        gp_pred_x[robot_idx] = copy(pred_x)
+        gp_pred_x_cov[robot_idx] = copy(pred_x_cov)
+
+        # here we do gp regression on y coordinate
+        gp_y[robot_idx].compute(obsv_t, obsv_err)
+        obsv_yn = []
+        for j in range(obsv_len):
+            obsv_yn.append(obsv_y[-obsv_len + j][robot_idx])
+        obsv_yn.append(-obsv_y[0][robot_idx])
+
+        pred_y, pred_y_cov = gp_y[robot_idx].predict(obsv_yn, pred_t, return_cov=True)
+        scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * pred_len)
+        pred_y_cov /= scale_y
+        gp_pred_y[robot_idx] = copy(pred_y)
+        gp_pred_y_cov[robot_idx] = copy(pred_y_cov)
+
+        # else: # for pedestrian we condition on predicted goal
+        #
+        #
+        #     pred_t = np.arange(pred_len) + obsv_len
+        #     obsv_t = np.array([i for i in range(obsv_len)] + [pred_len + obsv_len])
+        #     obsv_err = np.ones_like(obsv_t) * obsv_err_magnitude
+        #
+        #     # here we do gp regression on x coordinate
+        #     gp_x[i].compute(np.asarray(obsv_t), np.asarray(obsv_err))
+        #     obsv_xn = []
+        #     for j in range(obsv_len):
+        #         obsv_xn.append(obsv_x[-obsv_len + j][i])
+        #     # predict goal's x coordinate
+        #
+        #     curr_agent_x = obsv_x[-1][i]
+        #     curr_vel_x = obsv_x[-1][i] - obsv_x[-2][i]
+        #     curr_goal_x = curr_agent_x + curr_vel_x * (pred_len - 1)
+        #     obsv_xn.append(curr_goal_x)
+        #
+        #     # here we do gp regression on y coordinate
+        #     gp_y[i].compute(obsv_t, obsv_err)
+        #     obsv_yn = []
+        #     for j in range(obsv_len):
+        #         obsv_yn.append(obsv_y[-obsv_len + j][i])
+        #     # predict goal's y coordinate
+        #     curr_agent_y = obsv_y[-1][i]
+        #     curr_vel_y = obsv_y[-1][i] - obsv_y[-2][i]
+        #     curr_goal_y = curr_agent_y + curr_vel_y * (pred_len - 1)
+        #     obsv_yn.append(curr_goal_y)
+        #
+        #     curr_vel = np.sqrt(curr_vel_x ** 2 + curr_vel_y ** 2)
+        #     scale = pred_len * curr_vel / 2
+        #
+        #     pred_x, pred_x_cov = gp_x[i].predict(obsv_xn, pred_t, return_cov=True)
+        #     scale_x = np.diag(pred_x_cov).max() / (cov_thred_x * scale)
+        #     pred_x_cov /= scale_x
+        #     gp_pred_x[i] = copy(pred_x)
+        #     gp_pred_x_cov[i] = copy(pred_x_cov)
+        #
+        #     pred_y, pred_y_cov = gp_y[i].predict(obsv_yn, pred_t, return_cov=True)
+        #     scale_y = np.diag(pred_y_cov).max() / (cov_thred_y * scale)
+        #     pred_y_cov /= scale_y
+        #     gp_pred_y[i] = copy(pred_y)
+        #     gp_pred_y_cov[i] = copy(pred_y_cov)
 
     return gp_pred_x, gp_pred_y, gp_pred_x_cov, gp_pred_y_cov, pred_len
 
@@ -144,27 +190,27 @@ def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_
     :return: generated samples
     """
     time_seed = int(time.time() * 1000) % 1000
-    # print("random seed: ", time_seed)
+    print("random seed: ", time_seed)
     np.random.seed(time_seed)
 
-    # if include_mean is True:
-    #     print("GP mean included as sample")
-    # else:
-    #     print("GP mean NOT included as sample")
+    if include_mean is True:
+        print("GP mean included as sample")
+    else:
+        print("GP mean NOT included as sample")
     samples_x = np.zeros((num_agents * num_samples, pred_len))
     samples_y = np.zeros((num_agents * num_samples, pred_len))
     pdf_x = np.zeros((num_agents, num_samples), dtype=np.float128)
     pdf_y = np.zeros((num_agents, num_samples), dtype=np.float128)
     for i in range(num_agents):
         if pred_len > 1:
-            rv_x = mvn(mean=gp_pred_x[i], cov=gp_pred_x_cov[i])
+            rv_x = mvn(mean=gp_pred_x[i], cov=gp_pred_x_cov[i], allow_singular=True)
             samples_x[i * num_samples: (i + 1) * num_samples] = rv_x.rvs(size=num_samples).copy()
-            rv_y = mvn(mean=gp_pred_y[i], cov=gp_pred_y_cov[i])
+            rv_y = mvn(mean=gp_pred_y[i], cov=gp_pred_y_cov[i], allow_singular=True)
             samples_y[i * num_samples: (i + 1) * num_samples] = rv_y.rvs(size=num_samples).copy()
         else:
-            rv_x = mvn(mean=gp_pred_x[i], cov=gp_pred_x_cov[i])
+            rv_x = mvn(mean=gp_pred_x[i], cov=gp_pred_x_cov[i], allow_singular=True)
             samples_x[i * num_samples: (i + 1) * num_samples] = rv_x.rvs(size=num_samples).copy()[:, None]
-            rv_y = mvn(mean=gp_pred_y[i], cov=gp_pred_y_cov[i])
+            rv_y = mvn(mean=gp_pred_y[i], cov=gp_pred_y_cov[i], allow_singular=True)
             samples_y[i * num_samples: (i + 1) * num_samples] = rv_y.rvs(size=num_samples).copy()[:, None]
         if include_mean:
             # if include gp mean as sample, replace the first sample as gp mean
@@ -235,7 +281,7 @@ def get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weight
 
 def igp(state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
         a, h, obj_thred, max_iter, vel, dt, obsv_len, obsv_err_magnitude, cov_thred_x, cov_thred_y, gp_x, gp_y,
-        gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov, samples_x, samples_y, weights, include_pdf=False):
+        gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov, samples_x, samples_y, weights, include_pdf=False, actuate_index=0):
     robot_state = state.self_state
     goals_x = []
     goals_y = []
