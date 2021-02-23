@@ -336,7 +336,7 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     ax.set_ylim(-6, 6)
     ax.set_xlabel('x(m)', fontsize=16)
     ax.set_ylabel('y(m)', fontsize=16)
-    cmap = plt.get_cmap("gnuplot")
+    cmap = plt.get_cmap("RdYIGn")
     for i in range(num_agents):
         colors = [cmap(i) for i in np.linspace(0, 1, num_agents)]
         if i == robot_idx:
