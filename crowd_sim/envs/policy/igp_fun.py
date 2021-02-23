@@ -34,10 +34,10 @@ def gp_predict(state, robot_idx, num_agents, robot_state, vel, dt, len_scale,
     :return: length of the predicted trajectory
     """
     # initialization
-    gp_pred_x = [0. for _ in range(num_agents)]
-    gp_pred_x_cov = [0. for _ in range(num_agents)]
-    gp_pred_y = [0. for _ in range(num_agents)]
-    gp_pred_y_cov = [0. for _ in range(num_agents)]
+    # gp_pred_x = [0. for _ in range(num_agents)]
+    # gp_pred_x_cov = [0. for _ in range(num_agents)]
+    # gp_pred_y = [0. for _ in range(num_agents)]
+    # gp_pred_y_cov = [0. for _ in range(num_agents)]
 
     # extract current robot pose from collected observations
     curr_robot_x = robot_state.px
@@ -147,10 +147,10 @@ def gp_sampling(num_samples, num_agents, pred_len, gp_pred_x, gp_pred_x_cov, gp_
     # print("random seed: ", time_seed)
     np.random.seed(time_seed)
 
-    if include_mean is True:
-        print("GP mean included as sample")
-    else:
-        print("GP mean NOT included as sample")
+    # if include_mean is True:
+    #     print("GP mean included as sample")
+    # else:
+    #     print("GP mean NOT included as sample")
     samples_x = np.zeros((num_agents * num_samples, pred_len))
     samples_y = np.zeros((num_agents * num_samples, pred_len))
     pdf_x = np.zeros((num_agents, num_samples), dtype=np.float128)
