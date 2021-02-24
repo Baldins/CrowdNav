@@ -36,7 +36,7 @@ class Igp_Dist(Policy):
         self.obsv_len = 2
         self.count = 0
         self.vel = 0.6
-        self.collision_thresh = 0.2
+        self.collision_thresh = 0.1
         self.len_scale = 5
         self.num_agents = 22
         self.cov_thred_x = 0.05
