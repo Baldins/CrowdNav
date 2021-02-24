@@ -164,8 +164,8 @@ class Igp_Dist(Policy):
                 vel_x =  np.cos(theta) * robot_state.v_pref
                 vel_y =  np.sin(theta) * robot_state.v_pref
             else:
-                vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
-                vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
+                vel_x = 0.000000001 * (opt_robot_x - robot_x) / self.dt
+                vel_y = 0.000000001 * (opt_robot_y - robot_y) / self.dt
                 # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
                 #
                 # vel_x =  0.0000000001  * np.cos(theta) * robot_state.v_pref
