@@ -49,6 +49,7 @@ class Igp_Dist(Policy):
         self.weights = np.zeros(self.num_agents)
         self.include_pdf = True
         self.actuate_index = 1
+        self.case_number = 0
 
         self.gp_pred_x = [0. for _ in range(self.num_agents)]
         self.gp_pred_x_cov = [0. for _ in range(self.num_agents)]
@@ -118,60 +119,74 @@ class Igp_Dist(Policy):
         # vel = robot_state.v_pref
         vel = self.vel
         print(self.frame)
+        self.frame += 1
+
         if len(self.obsv_x) > self.obsv_len:
             print("IGP, robot_idx: ", robot_idx)
-            self.frame += 1
-            opt_robot_x, opt_robot_y, traj_x, traj_y = igp(self.fig, self.ax, state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples,
-                                                           self.num_agents, self.len_scale,
-                                                           self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
-                                                           self.obsv_len, self.obsv_err_magnitude, self.cov_thred_x,
-                                                           self.cov_thred_y,
-                                                           self.gp_x, self.gp_y, self.gp_pred_x, self.gp_pred_x_cov,
-                                                           self.gp_pred_y, self.gp_pred_y_cov, self.samples_x,
-                                                           self.samples_y, self.weights,
-                                                           include_pdf=self.include_pdf, actuate_index=self.actuate_index,
-                                                           num_samples_visual=self.num_samples_visual, frame=self.frame,
-                                                           temp_dir=self.temp_dir)
-            print("opt robot", opt_robot_y)
 
-            close_obst = []
-            close_obst2 = []
-            self.trajs_x.append(traj_x)
-            self.trajs_y.append(traj_y)
-
-            # print("self_traj", self.trajs)
-            #
-            # for k in range(len(self.trajs[0])):
-            #     print("traj = ",k, self.trajs[0][k], self.trajs[1][k])
-
-
-            for k in range(self.num_agents -1):
-                # print(traj_x[k][0])
-                distance = math.sqrt((traj_x[k][0] - opt_robot_x) ** 2 + (traj_y[k][0] - opt_robot_y) ** 2)
-                # print("distance ", distance)
-                if (distance <= self.collision_thresh):
-                    close_obst.append([traj_x[k], traj_y[k], distance])
-                # generate velocity command
-
-            if (len(close_obst) == 0 ):  # no obstacles
-
-                # vel_x = (opt_robot_x - robot_x) / self.dt
-                # vel_y = (opt_robot_y - robot_y) / self.dt
-                # print("opt_robot_x: ", opt_robot_x)
-
-
-                theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                vel_x =  np.cos(theta) * robot_state.v_pref
-                vel_y =  np.sin(theta) * robot_state.v_pref
+            # before start, compute the distance to last robot pose
+            last_robot_x = self.obsv_x[-2][-1]
+            last_robot_y = self.obsv_y[-2][-1]
+            robot_dist = np.linalg.norm([robot_x - last_robot_x, robot_y - last_robot_y])
+            if robot_dist > 1.0:
+                self.case_number += 1
+                print("Linear")
+                theta = np.arctan2(state.self_state.gy - robot_y, state.self_state.gx - robot_x)
+                vx = np.cos(theta) * state.self_state.v_pref
+                vy = np.sin(theta) * state.self_state.v_pref
+                action = ActionXY(vx, vy)
             else:
-                vel_x = 0.000000001 * (opt_robot_x - robot_x) / self.dt
-                vel_y = 0.000000001 * (opt_robot_y - robot_y) / self.dt
-                # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                #
-                # vel_x =  0.0000000001  * np.cos(theta) * robot_state.v_pref
-                # vel_y =  0.0000000001  * np.sin(theta) * robot_state.v_pref
+                opt_robot_x, opt_robot_y, traj_x, traj_y = igp(self.fig, self.ax, state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples,
+                                                               self.num_agents, self.len_scale,
+                                                               self.a, self.h, self.obj_thred, self.max_iter, vel, self.dt,
+                                                               self.obsv_len, self.obsv_err_magnitude, self.cov_thred_x,
+                                                               self.cov_thred_y,
+                                                               self.gp_x, self.gp_y, self.gp_pred_x, self.gp_pred_x_cov,
+                                                               self.gp_pred_y, self.gp_pred_y_cov, self.samples_x,
+                                                               self.samples_y, self.weights,
+                                                               include_pdf=self.include_pdf, actuate_index=self.actuate_index,
+                                                               num_samples_visual=self.num_samples_visual, frame=self.frame,
+                                                               temp_dir=self.temp_dir)
+                print("opt robot", opt_robot_y)
 
-            action = ActionXY(vel_x, vel_y)
+                close_obst = []
+                close_obst2 = []
+                self.trajs_x.append(traj_x)
+                self.trajs_y.append(traj_y)
+
+                # print("self_traj", self.trajs)
+                #
+                # for k in range(len(self.trajs[0])):
+                #     print("traj = ",k, self.trajs[0][k], self.trajs[1][k])
+
+
+                for k in range(self.num_agents -1):
+                    # print(traj_x[k][0])
+                    distance = math.sqrt((traj_x[k][0] - opt_robot_x) ** 2 + (traj_y[k][0] - opt_robot_y) ** 2)
+                    # print("distance ", distance)
+                    if (distance <= self.collision_thresh):
+                        close_obst.append([traj_x[k], traj_y[k], distance])
+                    # generate velocity command
+
+                if (len(close_obst) == 0 ):  # no obstacles
+
+                    # vel_x = (opt_robot_x - robot_x) / self.dt
+                    # vel_y = (opt_robot_y - robot_y) / self.dt
+                    # print("opt_robot_x: ", opt_robot_x)
+
+
+                    theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
+                    vel_x =  np.cos(theta) * robot_state.v_pref
+                    vel_y =  np.sin(theta) * robot_state.v_pref
+                else:
+                    vel_x = 0.000000001 * (opt_robot_x - robot_x) / self.dt
+                    vel_y = 0.000000001 * (opt_robot_y - robot_y) / self.dt
+                    # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
+                    #
+                    # vel_x =  0.0000000001  * np.cos(theta) * robot_state.v_pref
+                    # vel_y =  0.0000000001  * np.sin(theta) * robot_state.v_pref
+
+                action = ActionXY(vel_x, vel_y)
         else:
             print("Linear")
             theta = np.arctan2(state.self_state.gy - robot_y, state.self_state.gx - robot_x)
