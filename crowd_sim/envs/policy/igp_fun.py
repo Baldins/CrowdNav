@@ -369,6 +369,6 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     plt.savefig(temp_dir + case + file_name)
 
     plt.legend()
-    plt.pause(0.5)
+    plt.pause(0.1)
 
     return opt_robot_x, opt_robot_y, traj_x, traj_y
