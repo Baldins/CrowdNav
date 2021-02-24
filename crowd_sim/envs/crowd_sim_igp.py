@@ -647,15 +647,15 @@ class CrowdSim_IGP(gym.Env):
             # print("agents_future_positions", agents_future_positions[1][1])
             agents_future_circles = []
 
-            for i in range(self.human_num+1):
-                circles = []
-                print("(agents_future_positions", len(agents_future_positions[0][0]))
-                for j in range(len(agents_future_positions[0][0][i])):
-                    circle = plt.Circle((agents_future_positions[0][0][i][j], agents_future_positions[1][0][i][j]),
-                                        self.humans[0].radius / (1.7+j), fill=False, color=cmap(i))
-                    ax.add_artist(circle)
-                    circles.append(circle)
-                    agents_future_circles.append(circles)
+            # for i in range(self.human_num+1):
+            #     circles = []
+            #     print("(agents_future_positions", len(agents_future_positions[0][0]))
+            #     for j in range(len(agents_future_positions[0][0][i])):
+            #         circle = plt.Circle((agents_future_positions[0][0][i][j], agents_future_positions[1][0][i][j]),
+            #                             self.humans[0].radius / (1.7+j), fill=False, color=cmap(i))
+            #         ax.add_artist(circle)
+            #         circles.append(circle)
+            #         agents_future_circles.append(circles)
 
             def update(frame_num):
                 nonlocal global_step
@@ -727,11 +727,13 @@ class CrowdSim_IGP(gym.Env):
             anim = animation.FuncAnimation(fig, update, frames=len(self.states), interval=self.time_step * 1000)
             anim.running = True
 
+
+
             #if output_file is not None:
             ffmpeg_writer = animation.writers['ffmpeg']
             writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
             # anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
-            anim.save(f"/home/lambda-rl//Desktop/igp_video_{self.test_case}.mp4", writer=writer)
+            anim.save(f"/home/lambda-rl//Desktop/igp_video_{self.case_counter}.mp4", writer=writer)
 
             # else:
             # plt.show()

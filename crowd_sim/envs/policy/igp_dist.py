@@ -107,7 +107,7 @@ class Igp_Dist(Policy):
         robot_idx = idx + 1
 
         self.obsv_x, self.obsv_y = add_observation(obsv_xt, obsv_yt, self.obsv_x, self.obsv_y)
-
+        print("len(obsv_xt)", len(self.obsv_x))
         self.gp_pred_x = [0. for _ in range(self.num_agents)]
         self.gp_pred_x_cov = [0. for _ in range(self.num_agents)]
         self.gp_pred_y = [0. for _ in range(self.num_agents)]
@@ -117,8 +117,8 @@ class Igp_Dist(Policy):
 
         # vel = robot_state.v_pref
         vel = self.vel
-        print(self.count)
-        if self.count > self.obsv_len:
+        print(self.frame)
+        if len(self.obsv_x) > self.obsv_len:
             print("IGP, robot_idx: ", robot_idx)
             self.frame += 1
             opt_robot_x, opt_robot_y, traj_x, traj_y = igp(self.fig, self.ax, state, self.obsv_x, self.obsv_y, robot_idx, self.num_samples,
