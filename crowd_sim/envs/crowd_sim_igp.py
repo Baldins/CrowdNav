@@ -11,7 +11,7 @@ from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 import matplotlib.pyplot as plt
-
+import sys
 class CrowdSim_IGP(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -49,7 +49,7 @@ class CrowdSim_IGP(gym.Env):
         self.states = None
         self.action_values = None
         self.attention_weights = None
-
+        self.test_case = sys.argv[-1]
         self.trajs_x = list()
         self.trajs_y = list()
 
@@ -57,6 +57,7 @@ class CrowdSim_IGP(gym.Env):
         self.config = config
         self.time_limit = config.getint('env', 'time_limit')
         self.time_step = config.getfloat('env', 'time_step')
+
         self.randomize_attributes = config.getboolean('env', 'randomize_attributes')
         self.success_reward = config.getfloat('reward', 'success_reward')
         self.collision_penalty = config.getfloat('reward', 'collision_penalty')
@@ -331,7 +332,7 @@ class CrowdSim_IGP(gym.Env):
         Compute actions for all agents, detect collision, update environment and return (ob, reward, done, info)
 
         """
-
+        print("test_case", self.test_case)
         human_actions = []
 
         # print(self.global_time)
@@ -730,9 +731,9 @@ class CrowdSim_IGP(gym.Env):
             ffmpeg_writer = animation.writers['ffmpeg']
             writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
             # anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
-            anim.save("/home/fbaldini/Desktop/igp_square.mp4", writer=writer)
+            anim.save(f"/home/lambda-rl//Desktop/igp_video_{self.test_case}.mp4", writer=writer)
 
             # else:
-            plt.show()
+            # plt.show()
         else:
             raise NotImplementedError
