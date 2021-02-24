@@ -48,7 +48,7 @@ class Igp_Dist(Policy):
         self.max_iter = 1000  # maximal number of iterations allowed
         self.weights = np.zeros(self.num_agents)
         self.include_pdf = True
-        self.actuate_index = 1
+        self.actuate_index = 0
         self.case_number = 0
 
         self.gp_pred_x = [0. for _ in range(self.num_agents)]
@@ -143,7 +143,7 @@ class Igp_Dist(Policy):
                                                                self.cov_thred_y,
                                                                self.gp_x, self.gp_y, self.gp_pred_x, self.gp_pred_x_cov,
                                                                self.gp_pred_y, self.gp_pred_y_cov, self.samples_x,
-                                                               self.samples_y, self.weights,
+                                                               self.samples_y, self.weights, self.case_number,
                                                                include_pdf=self.include_pdf, actuate_index=self.actuate_index,
                                                                num_samples_visual=self.num_samples_visual, frame=self.frame,
                                                                temp_dir=self.temp_dir)
