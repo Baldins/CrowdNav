@@ -440,7 +440,7 @@ class CrowdSim(gym.Env):
 
         return ob, reward, done, info, ppl_count, self.robot.get_position(), self.robot.get_velocity(), dmin
 
-    def render(self, mode='human', output_file=None):
+    def render(self, mode='human', output_file=None, test_case = None):
         from matplotlib import animation
         import matplotlib.pyplot as plt
         plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
@@ -622,9 +622,9 @@ class CrowdSim(gym.Env):
             anim.running = True
 
             #if output_file is not None:
-            #    ffmpeg_writer = animation.writers['ffmpeg']
-            #    writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-            #    anim.save(output_file, writer=writer)
+               # ffmpeg_writer = animation.writers['ffmpeg']
+               # writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
+               # anim.save(output_file, writer=writer)
             #else:
             plt.show()
         else:

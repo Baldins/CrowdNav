@@ -491,7 +491,7 @@ class CrowdSim_IGP(gym.Env):
 
         return ob, reward, done, info, ppl_count, self.robot.get_position(), self.robot.get_velocity(), dmin
 
-    def render(self, mode='human', output_file=None):
+    def render(self, mode='human', output_file=None, test_case = None):
         from matplotlib import animation
         import matplotlib.pyplot as plt
         plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
@@ -729,13 +729,13 @@ class CrowdSim_IGP(gym.Env):
 
 
             print("counter", self.case_counter)
-            #if output_file is not None:
-            ffmpeg_writer = animation.writers['ffmpeg']
-            writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
-            # anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
-            anim.save(f"/home/lambda-rl//Desktop/igp_video{self.case_counter}.mp4", writer=writer)
+            if output_file is not None:
+                ffmpeg_writer = animation.writers['ffmpeg']
+                writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
+                # anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
+                anim.save(f"/home/lambda-rl//Desktop/igp_video{self.case_counter}.mp4", writer=writer)
 
-            # else:
-            # plt.show()
+            else:
+                plt.show()
         else:
             raise NotImplementedError

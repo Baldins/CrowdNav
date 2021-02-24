@@ -361,8 +361,8 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     ax.add_patch(robot)
     ax.annotate("R", xy=(state.self_state.px, state.self_state.py),fontsize=15, weight='bold', verticalalignment='center', horizontalalignment='center')
 
-    # file_name = 'frame_{0:04}.png'.format(frame)
-    # plt.savefig(temp_dir + file_name)
+    file_name = 'frame_{0:08}.png'.format(frame)
+    plt.savefig(temp_dir + file_name)
 
     plt.legend()
     plt.pause(0.5)
