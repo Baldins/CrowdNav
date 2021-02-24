@@ -166,8 +166,8 @@ def main():
         # # # # # #
         if args.traj:
             env.render('traj', args.video_file)
-        # else:
-        #     env.render('video', args.video_file)
+        else:
+            env.render('video', args.video_file)
 
 
         logging.info('It takes %.2f seconds to finish. Final status is %s', env.global_time, info)
