@@ -164,8 +164,8 @@ def main():
             #
         # #
         # # # # # #
-        # if args.traj:
-        #     env.render('traj', args.video_file)
+        if args.traj:
+            env.render('traj', args.video_file)
         # else:
         #     env.render('video', args.video_file)
 

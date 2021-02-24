@@ -728,12 +728,12 @@ class CrowdSim_IGP(gym.Env):
             anim.running = True
 
 
-
+            print("counter", self.case_counter)
             #if output_file is not None:
             ffmpeg_writer = animation.writers['ffmpeg']
             writer = ffmpeg_writer(fps=8, metadata=dict(artist='Me'), bitrate=1800)
             # anim.save("/home/lambda-rl/Desktop/igp_square.mp4", writer=writer)
-            anim.save(f"/home/lambda-rl//Desktop/igp_video_{self.case_counter}.mp4", writer=writer)
+            anim.save(f"/home/lambda-rl//Desktop/igp_video.mp4", writer=writer)
 
             # else:
             # plt.show()
