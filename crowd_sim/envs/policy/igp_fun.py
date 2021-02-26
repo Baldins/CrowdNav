@@ -362,11 +362,12 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
     ax.annotate("R", xy=(state.self_state.px, state.self_state.py),fontsize=15, weight='bold', verticalalignment='center', horizontalalignment='center')
 
     case = f"case_{case_number}"
-    if not os.path.exists(temp_dir + case):
-        os.mkdir(temp_dir + case)
+    ppl = f"{num_agents}"
+    if not os.path.exists(temp_dir + case + ppl):
+        os.mkdir(temp_dir + case + ppl)
 
     file_name = 'frame_{0:08}.png'.format(frame)
-    plt.savefig(temp_dir + case + file_name)
+    plt.savefig(temp_dir + case + ppl + file_name)
 
     plt.legend()
     plt.pause(0.1)

@@ -35,20 +35,20 @@ class Igp_Dist(Policy):
         self.obsv_y = []
         self.obsv_len = 2
         self.count = 0
-        self.vel = 0.6
+        self.vel = 0.3
         self.collision_thresh = 0.0
         self.len_scale = 5
         self.num_agents = 22
-        self.cov_thred_x = 0.05
-        self.cov_thred_y = 0.05
+        self.cov_thred_x = 0.03
+        self.cov_thred_y = 0.03
         self.obsv_err_magnitude = 0.001
-        self.a = 0.1  # a controls safety region
-        self.h = 10.0  # h controls safety weight
-        self.obj_thred = 0.0001  # terminal condition for optimization
+        self.a = 0.08  # a controls safety region
+        self.h = 1.0  # h controls safety weight
+        self.obj_thred = 0.0001 * self.num_agents ** 2  # terminal condition for optimization
         self.max_iter = 1000  # maximal number of iterations allowed
         self.weights = np.zeros(self.num_agents)
         self.include_pdf = True
-        self.actuate_index = 1
+        self.actuate_index = 3
         self.case_number = 0
 
         self.gp_pred_x = [0. for _ in range(self.num_agents)]
@@ -76,7 +76,7 @@ class Igp_Dist(Policy):
         self.fig, self.ax = plt.subplots(1, 1, figsize=(8., 8.))
         self.num_samples_visual = 10  # number of samples to be visualized
         self.frame = 0
-        self.temp_dir = '../frames/' + time.asctime() + '/'
+        self.temp_dir = '../ORCA/frames/' + time.asctime() + '/'
         os.makedirs(self.temp_dir)
 
     def configure(self, config):
@@ -170,14 +170,25 @@ class Igp_Dist(Policy):
 
                 if (len(close_obst) == 0 ):  # no obstacles
 
-                    # vel_x = (opt_robot_x - robot_x) / self.dt
-                    # vel_y = (opt_robot_y - robot_y) / self.dt
-                    # print("opt_robot_x: ", opt_robot_x)
+                    vel_x = (opt_robot_x - robot_x) / self.dt
+                    vel_y = (opt_robot_y - robot_y) / self.dt
+                    print("opt_robot_x: ", opt_robot_x)
+                    curr_vel = np.linalg.norm([opt_robot_x - robot_x,
+                                               opt_robot_y - robot_y])
+                    if curr_vel > robot_state.v_pref:
+                        vel_x /= curr_vel / robot_state.v_pref
+                        vel_y /= curr_vel / robot_state.v_pref
+                        curr_vel /= curr_vel / robot_state.v_pref
+                    print("curr_vel: ", curr_vel)
 
-
-                    theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
-                    vel_x =  np.cos(theta) * robot_state.v_pref
-                    vel_y =  np.sin(theta) * robot_state.v_pref
+                    # ratio = curr_vel / self.vel
+                    # if ratio > 1.0:
+                    #     ratio = 1.0
+                    # print("ratio: ", ratio)
+                    #
+                    # theta = np.arctan2(opt_robot_y - robot_y, opt_robot_x - robot_x)
+                    # vel_x = np.cos(theta) * robot_state.v_pref * ratio
+                    # vel_y = np.sin(theta) * robot_state.v_pref * ratio
                 else:
                     vel_x = 0.00000001 * (opt_robot_x - robot_x) / self.dt
                     vel_y = 0.00000001 * (opt_robot_y - robot_y) / self.dt
@@ -215,4 +226,3 @@ class Igp_Dist(Policy):
             traj_y[i] = self.samples_y[i * self.num_samples + opt_idx].copy()
 
         return traj_x, traj_y
-
