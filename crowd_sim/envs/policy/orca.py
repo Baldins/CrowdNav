@@ -59,7 +59,7 @@ class ORCA(Policy):
         self.kinematics = 'holonomic'
         self.safety_space = 0
         self.neighbor_dist = 10
-        self.max_neighbors = 10
+        self.max_neighbors = 30
         self.time_horizon = 5
         self.time_horizon_obst = 5
         self.radius = 0.3

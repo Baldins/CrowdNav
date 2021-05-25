@@ -1,0 +1,7 @@
+2021-01-30 08:53:06, INFO: Using device: cuda:0
+2021-01-30 08:53:06, INFO: Policy: SARL w/ global state
+2021-01-30 08:53:08, INFO: human number: 14
+2021-01-30 08:53:08, INFO: Not randomize human's radius and preferred speed
+2021-01-30 08:53:08, INFO: Training simulation: circle_crossing, test simulation: circle_crossing
+2021-01-30 08:53:08, INFO: Square width: 10.0, circle width: 4.0
+2021-01-30 08:53:08, INFO: Current learning rate: 0.010000

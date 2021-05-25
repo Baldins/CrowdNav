@@ -40,8 +40,8 @@ class Explorer(object):
             rewards = []
             while not done:
                 # non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 50)))
-                # non_attentive_humans = []
-                non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 2)))
+                non_attentive_humans = []
+                # non_attentive_humans = random.sample(self.env.humans, int(math.ceil(self.env.human_num / 2)))
                 non_attentive_humans = set(non_attentive_humans)
 
 
@@ -111,6 +111,7 @@ class Explorer(object):
             if imitation_learning:
                 # define the value of states in IL as cumulative discounted rewards, which is the same in RL
                 state = self.target_policy.transform(state)
+                print(state)
                 # value = pow(self.gamma, (len(states) - 1 - i) * self.robot.time_step * self.robot.v_pref)
                 value = sum([pow(self.gamma, max(t - i, 0) * self.robot.time_step * self.robot.v_pref) * reward
                              * (1 if t >= i else 0) for t, reward in enumerate(rewards)])

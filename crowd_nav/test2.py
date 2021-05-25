@@ -235,6 +235,15 @@ def main():
             if not os.path.exists(main+maindir + method_dir):
                 os.mkdir(main+maindir + method_dir)
 
+        if (robot_policy == 'sarl' and trained_env == 'igpdist_sfm' ):
+            method_dir = 'sarl_igp_sfm/'
+            if not os.path.exists(main+maindir + method_dir):
+                os.mkdir(main+maindir + method_dir)
+
+        if (robot_policy == 'sarl' and trained_env == 'igpdist_orca' ):
+            method_dir = 'sarl_igp_orca/'
+            if not os.path.exists(main+maindir + method_dir):
+                os.mkdir(main+maindir + method_dir)
 
         if (robot_policy == 'cadrl'and trained_env == 'orca'):
             method_dir = 'cadrl/'

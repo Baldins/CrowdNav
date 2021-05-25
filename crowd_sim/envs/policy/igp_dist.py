@@ -38,11 +38,11 @@ class Igp_Dist(Policy):
         self.vel = 0.3
         self.collision_thresh = 0.0
         self.len_scale = 5
-        self.num_agents = 22
+        self.num_agents = 8
         self.cov_thred_x = 0.03
         self.cov_thred_y = 0.03
         self.obsv_err_magnitude = 0.001
-        self.a = 0.08  # a controls safety region
+        self.a = 0.1  # a controls safety region
         self.h = 1.0  # h controls safety weight
         self.obj_thred = 0.0001 * self.num_agents ** 2  # terminal condition for optimization
         self.max_iter = 1000  # maximal number of iterations allowed
@@ -76,8 +76,10 @@ class Igp_Dist(Policy):
         self.fig, self.ax = plt.subplots(1, 1, figsize=(8., 8.))
         self.num_samples_visual = 10  # number of samples to be visualized
         self.frame = 0
-        self.temp_dir = '../ORCA/frames/' + time.asctime() + '/'
-        os.makedirs(self.temp_dir)
+        # self.temp_dir = '../Distnav/frames/' + time.asctime() + '/'
+        # os.makedirs(self.temp_dir)
+        self.sim = None
+
 
     def configure(self, config):
         return
@@ -145,8 +147,8 @@ class Igp_Dist(Policy):
                                                                self.gp_pred_y, self.gp_pred_y_cov, self.samples_x,
                                                                self.samples_y, self.weights, self.case_number,
                                                                include_pdf=self.include_pdf, actuate_index=self.actuate_index,
-                                                               num_samples_visual=self.num_samples_visual, frame=self.frame,
-                                                               temp_dir=self.temp_dir)
+                                                               num_samples_visual=self.num_samples_visual, frame=self.frame)
+                                                               # temp_dir=self.temp_dir)
                 print("opt robot", opt_robot_y)
 
                 close_obst = []
@@ -207,6 +209,8 @@ class Igp_Dist(Policy):
 
         self.obsv_xt = []
         self.obsv_yt = []
+
+        self.last_state = state
         return action
 
     def get_traj(self):

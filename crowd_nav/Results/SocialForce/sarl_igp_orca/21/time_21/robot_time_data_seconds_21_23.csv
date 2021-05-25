@@ -1,0 +1,2 @@
+,time (s),mean_local,std_local,collision_flag,dmin,reward
+0,15.75,10.901820546163849,3.6874100374709227,Reaching goal,0.2552446876862378,0.1932979408818429

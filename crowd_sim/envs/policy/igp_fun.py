@@ -290,7 +290,8 @@ def get_opt_traj(num_agents, num_samples, pred_len, samples_x, samples_y, weight
 def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_scale,
         a, h, obj_thred, max_iter, vel, dt, obsv_len, obsv_err_magnitude, cov_thred_x, cov_thred_y, gp_x, gp_y,
         gp_pred_x, gp_pred_x_cov, gp_pred_y, gp_pred_y_cov, samples_x, samples_y, weights,case_number,
-        include_pdf=False, actuate_index=0, num_samples_visual=1, frame=0, temp_dir=''):
+        include_pdf=False, actuate_index=0, num_samples_visual=1, frame=0):
+    # , temp_dir=''):
     robot_state = state.self_state
     goals_x = []
     goals_y = []
@@ -363,13 +364,13 @@ def igp(fig, ax, state, obsv_x, obsv_y, robot_idx, num_samples, num_agents, len_
 
     case = f"case_{case_number}"
     ppl = f"{num_agents}"
-    if not os.path.exists(temp_dir + case + ppl):
-        os.mkdir(temp_dir + case + ppl)
+    # if not os.path.exists(temp_dir + case + ppl):
+    #     os.mkdir(temp_dir + case + ppl)
 
-    file_name = 'frame_{0:08}.png'.format(frame)
-    plt.savefig(temp_dir + case + ppl + file_name)
+    # file_name = 'frame_{0:08}.png'.format(frame)
+    # plt.savefig(temp_dir + case + ppl + file_name)
 
-    plt.legend()
-    plt.pause(0.1)
+    ax.legend()
+    plt.pause(0.01)
 
     return opt_robot_x, opt_robot_y, traj_x, traj_y

@@ -22,8 +22,10 @@ def main():
     args = parser.parse_args()
 
     # define the names of the models you want to plot and the longest episodes you want to show
-    models = ['LSTM-RL', 'SARL', 'OM-SARL']
-    max_episodes = 10000
+    # models = ['LSTM-RL', 'SARL', 'OM-SARL']
+    models = ['Initialized with DistNav and trained on sfm', 'Initialized with DistNav and trained on orca', 'sarl_sfm', 'sarl_orca']
+
+    max_episodes = 5000
 
     ax1 = ax2 = ax3 = ax4 = None
     ax1_legends = []
