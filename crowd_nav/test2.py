@@ -54,7 +54,7 @@ def main():
     # configure logging and device
     logging.basicConfig(level=logging.INFO, format='%(asctime)s, %(levelname)s: %(message)s',
                         datefmt="%Y-%m-%d %H:%M:%S")
-    device = torch.device("cuda:0" if torch.cuda.is_available() and args.gpu else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() and args.gpu else "cpu")
     # device = 'cpu'
     logging.info('Using device: %s', device)
 
@@ -164,10 +164,10 @@ def main():
             #
         # #
         # # # # # #
-        if args.traj:
-            env.render('traj', args.video_file)
-        else:
-            env.render('video', args.video_file)
+        # if args.traj:
+        #     env.render('traj', args.video_file)
+        # else:
+        #     env.render('video', args.video_file)
 
 
         logging.info('It takes %.2f seconds to finish. Final status is %s', env.global_time, info)
