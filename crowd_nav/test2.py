@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--circle', default=False, action='store_true')
     parser.add_argument('--video_file', type=str, default=False)
     parser.add_argument('--traj', default=False, action='store_true')
-    parser.add_argument('--human_policy',  type=str, default='orca')
+    parser.add_argument('--human_policy',  type=str, default='socialforce')
     parser.add_argument('--trained_env',  type=str, default='socialforce')
     args = parser.parse_args()
 
@@ -54,7 +54,7 @@ def main():
     # configure logging and device
     logging.basicConfig(level=logging.INFO, format='%(asctime)s, %(levelname)s: %(message)s',
                         datefmt="%Y-%m-%d %H:%M:%S")
-    device = torch.device("cuda:0" if torch.cuda.is_available() and args.gpu else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() and args.gpu else "cpu")
     # device = 'cpu'
     logging.info('Using device: %s', device)
 
