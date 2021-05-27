@@ -1,11 +1,12 @@
 from torch.utils.data import Dataset
 
-
 class ReplayMemory(Dataset):
     def __init__(self, capacity):
         self.capacity = capacity
         self.memory = list()
         self.position = 0
+
+
 
     def push(self, item):
         # replace old experience with new experience
@@ -17,6 +18,9 @@ class ReplayMemory(Dataset):
 
     def is_full(self):
         return len(self.memory) == self.capacity
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
 
     def __getitem__(self, item):
         return self.memory[item]

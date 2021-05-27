@@ -211,7 +211,7 @@ class Igp_Dist(Policy):
         self.obsv_yt = []
 
         self.last_state = state
-        return action
+        return action,
 
     def get_traj(self):
 
